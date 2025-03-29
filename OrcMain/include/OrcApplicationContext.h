@@ -11,16 +11,14 @@ namespace Orc
     {
     public:
         ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height);
-        ~ApplicationContext() = default;
-        void initApp();
-        void closeApp();
+        ~ApplicationContext();
 
         Root* getRoot() const;
 
         ORC_DISABLE_COPY_AND_MOVE(ApplicationContext)
     private:
         class impl;
-        impl* pimpl;
+        std::unique_ptr<impl> mpimpl;
 
         void* mWindowHandle;
 
