@@ -1,0 +1,21 @@
+file(GLOB_RECURSE ORC_SOURCE_FILES CONFIGURE_DEPENDS *.cpp)
+file(GLOB_RECURSE ORC_HEADER_FILES CONFIGURE_DEPENDS *.h)
+
+add_library(OrcMain STATIC ${ORC_SOURCE_FILES} ${ORC_HEADER_FILES})
+
+target_include_directories(OrcMain PUBLIC "include")
+target_link_libraries(OrcMain PRIVATE SDL3::SDL3)
+
+if(WIN32)
+    find_package(Vulkan)
+    if(Vulkan_FOUND)
+        target_compile_definitions(OrcMain PRIVATE ORC_USE_VULKAN)
+        target_link_libraries(OrcMain PRIVATE Vulkan::Vulkan)
+    endif()
+	target_compile_definitions(OrcMain PRIVATE -DORC_PLATFORM_WIN32)
+elseif(UNIX AND NOT APPLE)
+    find_package(Vulkan REQUIRED)
+    target_compile_definitions(OrcMain PRIVATE ORC_USE_VULKAN)
+    target_link_libraries(OrcMain PRIVATE Vulkan::Vulkan)
+    target_compile_definitions(OrcMain PRIVATE -DORC_PLATFORM_LINUX)
+endif()
