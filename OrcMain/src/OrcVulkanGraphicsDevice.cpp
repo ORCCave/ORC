@@ -288,7 +288,20 @@ namespace Orc
 
         CommandList* createCommandList(CommandList::CommandListTypes type)
         {
-            return createVulkanCommandList(this, type);
+            CommandList* list = nullptr;
+            switch (type)
+            {
+            case CommandList::CommandListTypes::CLT_GRAPHICS:
+                list = createVulkanCommandList(this, mGraphicsCommandPool, type);
+                break;
+            case CommandList::CommandListTypes::CLT_COPY:
+                list = createVulkanCommandList(this, mTransferCommandPool, type);
+                break;
+            case CommandList::CommandListTypes::CLT_COMPUTE:
+                list = createVulkanCommandList(this, mComputeCommandPool, type);
+                break;
+            }
+            return list;
         }
 
         VkInstance mInstance;
