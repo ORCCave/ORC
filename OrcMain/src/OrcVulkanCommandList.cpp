@@ -9,14 +9,19 @@ namespace Orc
     {
     public:
         VulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type)
+            : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool)
         {
-            auto vulkanDevice = static_cast<VkDevice>(device->getRawGraphicsDevice());
             VkCommandBufferAllocateInfo allocInfo = {};
             allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            allocInfo.commandPool = cmdPool;
+            allocInfo.commandPool = mCmdPool;
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             allocInfo.commandBufferCount = 1;
-            CHECK_VK_RESULT(vkAllocateCommandBuffers(vulkanDevice, &allocInfo, &mCommandBuffer));
+            CHECK_VK_RESULT(vkAllocateCommandBuffers(mDevice, &allocInfo, &mCommandBuffer));
+        }
+
+        ~VulkanCommandList()
+        {
+            vkFreeCommandBuffers(mDevice, mCmdPool, 1, &mCommandBuffer);
         }
 
         void begin()
@@ -37,6 +42,8 @@ namespace Orc
             return mCommandBuffer;
         }
 
+        VkDevice mDevice;
+        VkCommandPool mCmdPool;
         VkCommandBuffer mCommandBuffer;
     };
 

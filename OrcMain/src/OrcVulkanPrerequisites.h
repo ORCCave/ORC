@@ -16,7 +16,7 @@
 #define VK_USE_PLATFORM_XLIB_KHR
 #endif
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "OrcException.h"
 #ifdef NDEBUG

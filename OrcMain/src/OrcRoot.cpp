@@ -38,6 +38,7 @@ namespace Orc
             if (!running)
                 break;
 
+            device->acquireNextImage();
             // todo
 
             device->present();

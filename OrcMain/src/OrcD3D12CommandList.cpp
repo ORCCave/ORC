@@ -8,7 +8,6 @@ namespace Orc
 	class D3D12CommandList : public CommandList
 	{
 	public:
-
         D3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type) : CommandList()
         {
             auto d3d12Device = static_cast<ID3D12Device4*>(device->getRawGraphicsDevice());
@@ -34,6 +33,7 @@ namespace Orc
             mCommandAllocator->Reset();
             mCommandList->Reset(mCommandAllocator.Get(), nullptr);
 		}
+
 		void end()
 		{
             mCommandList->Close();
@@ -43,7 +43,7 @@ namespace Orc
 		{
 			return mCommandList.Get();
 		}
-
+	private:
         Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCommandAllocator;
 	};

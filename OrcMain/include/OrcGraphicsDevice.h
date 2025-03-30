@@ -29,6 +29,7 @@ namespace Orc
         virtual ~GraphicsDevice() = default;
 
         virtual void present() = 0;
+        virtual void acquireNextImage() {}
 
         GraphicsDeviceTypes mGraphicsDeviceType;
 
