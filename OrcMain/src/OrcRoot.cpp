@@ -38,10 +38,10 @@ namespace Orc
             if (!running)
                 break;
 
-            device->acquireNextImage();
+            device->beginDraw();
             // todo
 
-            device->present();
+            device->endDraw();
         }
     }
 }

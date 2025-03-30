@@ -126,7 +126,7 @@ namespace Orc
             swapChain->Release();
         }
 
-        void present()
+        void endDraw()
         {
             mSwapChain->Present(1, 0);
             moveToNextFrame();

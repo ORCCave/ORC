@@ -205,7 +205,7 @@ namespace Orc
             mFrameIndex = frameIndex.value;
         }
 
-        void present()
+        void endDraw()
         {
         }
 

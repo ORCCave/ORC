@@ -28,8 +28,8 @@ namespace Orc
         GraphicsDevice(GraphicsDeviceTypes type) : mGraphicsDeviceType(type) {}
         virtual ~GraphicsDevice() = default;
 
-        virtual void present() = 0;
-        virtual void acquireNextImage() {}
+        virtual void beginDraw() {}
+        virtual void endDraw() = 0;
 
         GraphicsDeviceTypes mGraphicsDeviceType;
 
