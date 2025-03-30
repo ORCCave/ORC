@@ -29,6 +29,9 @@ namespace Orc
 
         ~D3D12GraphicsDevice()
         {
+            _wait(CommandList::CommandListTypes::CLT_GRAPHICS);
+            _wait(CommandList::CommandListTypes::CLT_COPY);
+            _wait(CommandList::CommandListTypes::CLT_COMPUTE);
             mAdapter.Reset();
             mDebugController.Reset();
             mFactory.Reset();
@@ -147,6 +150,29 @@ namespace Orc
             return createD3D12CommandList(this, type);
         }
 
+        void _wait(CommandList::CommandListTypes type)
+        {
+            switch (type)
+            {
+            case CommandList::CommandListTypes::CLT_GRAPHICS:
+                mGraphicsQueue->Signal(mFence.Get(), mFenceValue[mFrameIndex]);
+                mFence->SetEventOnCompletion(mFenceValue[mFrameIndex]++, mEvent.Get());
+                WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE);
+                break;
+            case CommandList::CommandListTypes::CLT_COPY:
+                mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue);
+                mCopyFence->SetEventOnCompletion(mCopyFenceValue++, mCopyEvent.Get());
+                WaitForSingleObjectEx(mCopyEvent.Get(), INFINITE, FALSE);
+                break;
+            case CommandList::CommandListTypes::CLT_COMPUTE:
+                mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue);
+                mComputeFence->SetEventOnCompletion(mComputeFenceValue++, mComputeEvent.Get());
+                WaitForSingleObjectEx(mComputeEvent.Get(), INFINITE, FALSE);
+                break;
+            }
+        }
+
+    private:
         Microsoft::WRL::ComPtr<IDXGIAdapter4> mAdapter;
         Microsoft::WRL::ComPtr<ID3D12Debug> mDebugController;
         Microsoft::WRL::ComPtr<IDXGIFactory7> mFactory;
