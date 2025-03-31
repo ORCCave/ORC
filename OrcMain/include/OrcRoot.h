@@ -3,6 +3,7 @@
 #include "OrcDefines.h"
 #include "OrcGraphicsDevice.h"
 #include "OrcSingleton.h"
+#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
 namespace Orc
@@ -11,7 +12,7 @@ namespace Orc
     class Root : public Singleton<Root>
     {
     public:
-        GraphicsDevice* createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type);
+        std::shared_ptr<GraphicsDevice> createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type);
         void destroyGraphicsDevice(GraphicsDevice* device);
         void startRendering(GraphicsDevice* device);
 

@@ -6,9 +6,9 @@
 
 namespace Orc
 {
-    GraphicsDevice* Root::createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type)
+    std::shared_ptr<GraphicsDevice> Root::createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type)
     {
-        GraphicsDevice* device = Orc::createGraphicsDevice(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type);
+        std::shared_ptr<GraphicsDevice> device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type);
         if (device == nullptr)
             throw OrcException("Invalid GraphicsDeviceType");
         return device;

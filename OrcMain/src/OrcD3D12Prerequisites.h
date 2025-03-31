@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OrcGraphicsDevice.h"
+#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
 #ifdef ORC_PLATFORM_WIN32
@@ -22,10 +23,10 @@
 
 namespace Orc
 {
-    GraphicsDevice* createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);
-    CommandList* createD3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type);
+    std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);
+    std::shared_ptr<CommandList> createD3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type);
 }
 
 #else
-namespace Orc { inline GraphicsDevice* createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height) { return nullptr; } }
+namespace Orc { inline std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height) { return std::shared_ptr<GraphicsDevice>(); } }
 #endif

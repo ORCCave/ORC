@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OrcGraphicsDevice.h"
+#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
 #ifdef ORC_USE_VULKAN
@@ -22,9 +23,9 @@
 
 namespace Orc
 {
-    GraphicsDevice* createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
-    CommandList* createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type);
+    std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
+    std::shared_ptr<CommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type);
 }
 #else
-namespace Orc { inline GraphicsDevice* createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height) { return nullptr; } }
+namespace Orc { inline std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height) { return std::shared_ptr<GraphicsDevice>(); } }
 #endif

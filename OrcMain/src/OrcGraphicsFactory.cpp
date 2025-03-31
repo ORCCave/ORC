@@ -5,9 +5,9 @@
 
 namespace Orc
 {
-    GraphicsDevice* createGraphicsDevice(void* windowHandle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceTypes type)
+    std::shared_ptr<GraphicsDevice> createGraphicsDeviceByType(void* windowHandle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceTypes type)
     {
-        GraphicsDevice* device = nullptr;
+        std::shared_ptr<GraphicsDevice> device;
         switch (type)
         {
         case GraphicsDevice::GraphicsDeviceTypes::GDT_D3D12:

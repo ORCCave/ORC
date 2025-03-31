@@ -48,9 +48,9 @@ namespace Orc
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCommandAllocator;
     };
 
-    CommandList* createD3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type)
+    std::shared_ptr<CommandList> createD3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type)
     {
-        return new D3D12CommandList(device, type);
+        return std::make_shared<D3D12CommandList>(device, type);
     }
 }
 #endif

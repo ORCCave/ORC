@@ -211,9 +211,9 @@ namespace Orc
             return static_cast<VkDevice>(mDevice.get());
         }
 
-        CommandList* createCommandList(CommandList::CommandListTypes type)
+        std::shared_ptr<CommandList> createCommandList(CommandList::CommandListTypes type)
         {
-            CommandList* list = nullptr;
+            std::shared_ptr<CommandList> list;
             switch (type)
             {
             case CommandList::CommandListTypes::CLT_GRAPHICS:
@@ -258,12 +258,12 @@ namespace Orc
         vk::UniqueSemaphore mRenderFinishedSemaphore;
     };
 
-    GraphicsDevice* createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
+    std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
     {
         auto props = SDL_GetWindowProperties((SDL_Window*)windowHandle);
         auto instance = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
         auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-        return new VulkanGraphicsDevice(instance, hwnd, width, height);
+        return std::make_shared<VulkanGraphicsDevice>(instance, hwnd, width, height);
     }
 }
 #endif

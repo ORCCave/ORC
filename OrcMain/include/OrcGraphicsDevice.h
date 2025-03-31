@@ -2,6 +2,7 @@
 
 #include "OrcCommandList.h"
 #include "OrcDefines.h"
+#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
 namespace Orc
@@ -18,10 +19,8 @@ namespace Orc
 
         virtual void* getRawGraphicsDevice() const = 0;
 
-        virtual CommandList* createCommandList(CommandList::CommandListTypes type) = 0;
-        void destroyCommandList(CommandList* commandList) { delete commandList; }
+        virtual std::shared_ptr<CommandList> createCommandList(CommandList::CommandListTypes type) = 0;
 
-        GraphicsDeviceTypes getGraphicsDeviceType() const { return mGraphicsDeviceType; }
         virtual void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists) = 0;
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsDevice)

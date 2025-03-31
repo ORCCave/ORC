@@ -145,7 +145,7 @@ namespace Orc
             mFenceValue[mFrameIndex] = currentFenceValue + 1;
         }
 
-        CommandList* createCommandList(CommandList::CommandListTypes type)
+        std::shared_ptr<CommandList> createCommandList(CommandList::CommandListTypes type)
         {
             return createD3D12CommandList(this, type);
         }
@@ -226,11 +226,11 @@ namespace Orc
         Microsoft::WRL::Wrappers::Event mComputeEvent;
     };
 
-    GraphicsDevice* createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
+    std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
     {
         auto props = SDL_GetWindowProperties((SDL_Window*)windowHandle);
         auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-        return new D3D12GraphicsDevice((HWND)hwnd, width, height);
+        return std::make_shared<D3D12GraphicsDevice>((HWND)hwnd, width, height);
     }
 }
 #endif

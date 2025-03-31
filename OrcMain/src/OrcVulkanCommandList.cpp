@@ -46,9 +46,9 @@ namespace Orc
         std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
     };
 
-    CommandList* createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type)
+    std::shared_ptr<CommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type)
     {
-        return new VulkanCommandList(device, cmdPool, type);
+        return std::make_shared<VulkanCommandList>(device, cmdPool, type);
     }
 }
 #endif
