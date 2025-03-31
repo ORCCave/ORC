@@ -18,7 +18,6 @@ namespace Orc
             allocInfo.commandBufferCount = 1;
             vk::CommandBufferAllocateInfo createInfo(allocInfo);
             vk::Device wrapDevice(mDevice);
-            vk::CommandPool cmdPool(mCmdPool);
             std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
             mCommandBuffer = wrapDevice.allocateCommandBuffersUnique(createInfo);
         }
