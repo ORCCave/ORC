@@ -16,35 +16,35 @@ namespace Orc
             allocInfo.commandPool = mCmdPool;
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
             allocInfo.commandBufferCount = 1;
-            CHECK_VK_RESULT(vkAllocateCommandBuffers(mDevice, &allocInfo, &mCommandBuffer));
-        }
-
-        ~VulkanCommandList()
-        {
-            vkFreeCommandBuffers(mDevice, mCmdPool, 1, &mCommandBuffer);
+            vk::CommandBufferAllocateInfo createInfo(allocInfo);
+            vk::Device wrapDevice(mDevice);
+            vk::CommandPool cmdPool(mCmdPool);
+            std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
+            mCommandBuffer = wrapDevice.allocateCommandBuffersUnique(createInfo);
         }
 
         void begin()
         {
-            VkCommandBufferBeginInfo beginInfo = {};
-            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-            CHECK_VK_RESULT(vkBeginCommandBuffer(mCommandBuffer, &beginInfo));
+            VkCommandBufferBeginInfo rawBeginInfo = {};
+            rawBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            rawBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+            vk::CommandBufferBeginInfo beginInfo(rawBeginInfo);
+            mCommandBuffer[0]->begin(beginInfo);
         }
 
         void end()
         {
-            CHECK_VK_RESULT(vkEndCommandBuffer(mCommandBuffer));
+            mCommandBuffer[0]->end();
         }
 
         void* getRawCommandList() const
         {
-            return mCommandBuffer;
+            return static_cast<VkCommandBuffer>(mCommandBuffer[0].get());
         }
 
         VkDevice mDevice;
         VkCommandPool mCmdPool;
-        VkCommandBuffer mCommandBuffer;
+        std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
     };
 
     CommandList* createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type)
