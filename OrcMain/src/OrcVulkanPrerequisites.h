@@ -18,32 +18,10 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "OrcException.h"
-#ifdef NDEBUG
-#define CHECK_VK_RESULT(result)
-#else
-#define CHECK_VK_RESULT(result)                                 \
-do                                                              \
-{                                                               \
-    VkResult res = (result);                                    \
-    if (res != VK_SUCCESS)                                      \
-    {                                                           \
-        throw Orc::OrcException(Orc::VKResultToString(result)); \
-    }                                                           \
-} while (0)
-#endif
+#include "OrcCommandList.h"
 
 namespace Orc
 {
-    inline const char* VKResultToString(VkResult result)
-    {
-        switch (result)
-        {
-        case VK_SUCCESS: return "VK_SUCCESS";
-        default: return "Unknown VkResult";
-        }
-    }
-
     GraphicsDevice* createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
     CommandList* createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type);
 }
