@@ -15,14 +15,14 @@ namespace Orc
         VulkanGraphicsDevice(void* instance, void* windowHandle, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceTypes::GDT_VULKAN)
         {
             _createInstance();
-			_createPhysicalDevice();
+            _createPhysicalDevice();
             _createSurface(instance, windowHandle);
-			_createDevice();
+            _createDevice();
             _createSwapChain(width, height);
             _createQueue();
-			_createCommandPool();
-			_createCommandBuffer();
-			_createSemaphore();
+            _createCommandPool();
+            _createCommandBuffer();
+            _createSemaphore();
         }
 
         void _createInstance()
@@ -45,8 +45,8 @@ namespace Orc
             mInstance = vk::createInstanceUnique(createInfo);
         }
 
-		void _createPhysicalDevice()
-		{
+        void _createPhysicalDevice()
+        {
             auto physicalDevices = mInstance->enumeratePhysicalDevices();
             if (physicalDevices.empty())
             {
@@ -63,7 +63,7 @@ namespace Orc
                     break;
                 }
             }
-		}
+        }
 
         void _createDevice()
         {
@@ -164,18 +164,18 @@ namespace Orc
             mTransferQueue = mDevice->getQueue(mTransferFamily, 0);
         }
 
-		void _createCommandPool()
-		{
+        void _createCommandPool()
+        {
             vk::CommandPoolCreateInfo createInfo({}, mGraphicsFamily);
             mGraphicsCommandPool = mDevice->createCommandPoolUnique(createInfo);
             createInfo.queueFamilyIndex = mComputeFamily;
             mComputeCommandPool = mDevice->createCommandPoolUnique(createInfo);
             createInfo.queueFamilyIndex = mTransferFamily;
             mTransferCommandPool = mDevice->createCommandPoolUnique(createInfo);
-		}
+        }
 
-		void _createCommandBuffer()
-		{
+        void _createCommandBuffer()
+        {
             vk::CommandBufferAllocateInfo allocateInfo(mGraphicsCommandPool.get(), vk::CommandBufferLevel::ePrimary, 1);
             auto graphicsCommandBuffers = mDevice->allocateCommandBuffersUnique(allocateInfo);
             mGraphicsCommandBuffer = std::move(graphicsCommandBuffers[0]);
@@ -185,7 +185,7 @@ namespace Orc
             allocateInfo.commandPool = mTransferCommandPool.get();
             auto transferCommandPools = mDevice->allocateCommandBuffersUnique(allocateInfo);
             mTransferCommandBuffer = std::move(transferCommandPools[0]);
-		}
+        }
 
         void _createSemaphore()
         {

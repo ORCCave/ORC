@@ -10,7 +10,7 @@ namespace Orc
     {
     public:
         impl(void* handle, uint32 width, uint32 height) : mRoot(new Root(handle, width, height)) {}
-		~impl() { delete mRoot; }
+        ~impl() { delete mRoot; }
         Root* mRoot;
     };
 

@@ -22,8 +22,8 @@ namespace Orc
 
         void* mWindowHandle;
 
-		std::string mWindowTitle;
-		uint32 mWidth;
-		uint32 mHeight;
+        std::string mWindowTitle;
+        uint32 mWidth;
+        uint32 mHeight;
     };
 }

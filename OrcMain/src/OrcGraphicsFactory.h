@@ -5,5 +5,5 @@
 
 namespace Orc
 {
-	GraphicsDevice* createGraphicsDevice(void* windowHandle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceTypes type);
+    GraphicsDevice* createGraphicsDevice(void* windowHandle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceTypes type);
 }

@@ -8,7 +8,7 @@
 namespace Orc
 {
     class ApplicationContext;
-	class Root : public Singleton<Root>
+    class Root : public Singleton<Root>
     {
     public:
         GraphicsDevice* createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type);
