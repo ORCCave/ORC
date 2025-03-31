@@ -11,7 +11,7 @@ namespace Orc
         D3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type) : CommandList()
         {
             auto d3d12Device = static_cast<ID3D12Device4*>(device->getRawGraphicsDevice());
-            D3D12_COMMAND_LIST_TYPE d3d12Type = D3D12_COMMAND_LIST_TYPE_NONE;
+            D3D12_COMMAND_LIST_TYPE d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 			switch (type)
 			{
 			case CommandListTypes::CLT_GRAPHICS:
