@@ -113,17 +113,12 @@ namespace Orc
             scDesc.SampleDesc.Quality = 0;
             scDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
             scDesc.Scaling = DXGI_SCALING_STRETCH;
-
             DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc{};
             fsSwapChainDesc.Windowed = TRUE;
-            IDXGISwapChain1* swapChain;
-
+            Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
             mFactory->CreateSwapChainForHwnd(mGraphicsQueue.Get(), hwnd, &scDesc, &fsSwapChainDesc, nullptr, &swapChain);
             mFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
-
-            swapChain->QueryInterface(mSwapChain.ReleaseAndGetAddressOf());
-
-            swapChain->Release();
+            swapChain.As(&mSwapChain);
         }
 
         void endDraw()
@@ -203,12 +198,6 @@ namespace Orc
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> mGraphicsQueue;
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> mCopyQueue;
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> mComputeQueue;
-
-        HMODULE mHD3D12;
-        HMODULE mHDXGI;
-
-        HMODULE mHD3D12Debug;
-        HMODULE mHDXGIDebug;
 
         Microsoft::WRL::ComPtr<IDXGISwapChain4> mSwapChain;
 
