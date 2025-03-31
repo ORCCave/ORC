@@ -11,10 +11,17 @@ namespace Orc
     public:
         D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceTypes::GDT_D3D12)
         {
-            mHD3D12 = LoadLibraryW(L"d3d12.dll");
-            mHDXGI = LoadLibraryW(L"dxgi.dll");
-            mHD3D12Debug = LoadLibraryW(L"D3D12SDKLayers.dll");
-            mHDXGIDebug = LoadLibraryW(L"dxgidebug.dll");
+            if(mHD3D12 == NULL)
+                mHD3D12 = LoadLibraryW(L"d3d12.dll");
+            if (mHDXGI == NULL)
+                mHDXGI = LoadLibraryW(L"dxgi.dll");
+#ifdef _DEBUG
+            if (mHD3D12Debug == NULL)
+                mHD3D12Debug = LoadLibraryW(L"D3D12SDKLayers.dll");
+            if (mHDXGIDebug == NULL)
+                mHDXGIDebug = LoadLibraryW(L"dxgidebug.dll");
+
+#endif
             _createDevice();
             _createQueue();
             _createSwapChain(hwnd, width, height);
@@ -213,6 +220,11 @@ namespace Orc
         uint64 mComputeFenceValue = 0;
         Microsoft::WRL::ComPtr<ID3D12Fence1> mComputeFence;
         Microsoft::WRL::Wrappers::Event mComputeEvent;
+
+        inline static HMODULE mHD3D12 = NULL;
+        inline static HMODULE mHDXGI = NULL;
+        inline static HMODULE mHD3D12Debug = NULL;
+        inline static HMODULE mHDXGIDebug = NULL;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
