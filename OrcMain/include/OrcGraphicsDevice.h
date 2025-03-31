@@ -2,6 +2,7 @@
 
 #include "OrcCommandList.h"
 #include "OrcDefines.h"
+#include "OrcTypes.h"
 
 namespace Orc
 {
