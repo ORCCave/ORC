@@ -21,6 +21,7 @@ namespace Orc
         void destroyCommandList(CommandList* commandList) { delete commandList; }
 
         GraphicsDeviceTypes getGraphicsDeviceType() const { return mGraphicsDeviceType; }
+        virtual void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists) = 0;
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsDevice)
 

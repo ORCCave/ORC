@@ -18,7 +18,7 @@ namespace Orc
 		virtual void begin() = 0;
 		virtual void end() = 0;
 
-		virtual void* getRawGraphicsCommandList() const = 0;
+		virtual void* getRawCommandList() const = 0;
 
 		ORC_DISABLE_COPY_AND_MOVE(CommandList)
 	protected:

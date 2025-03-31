@@ -39,7 +39,7 @@ namespace Orc
             mCommandList->Close();
 		}
 
-		void* getRawGraphicsCommandList() const
+		void* getRawCommandList() const
 		{
 			return mCommandList.Get();
 		}

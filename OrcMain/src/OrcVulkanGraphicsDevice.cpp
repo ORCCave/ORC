@@ -194,10 +194,7 @@ namespace Orc
             mRenderFinishedSemaphore = mDevice->createSemaphoreUnique(createInfo);
         }
 
-        ~VulkanGraphicsDevice()
-        {
-            mDevice->waitIdle();
-        }
+        ~VulkanGraphicsDevice() { mDevice->waitIdle(); }
 
         void acquireNextImage()
         {
@@ -230,6 +227,11 @@ namespace Orc
                 break;
             }
             return list;
+        }
+
+        void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists)
+        {
+
         }
 
         int32 mGraphicsFamily = -1;

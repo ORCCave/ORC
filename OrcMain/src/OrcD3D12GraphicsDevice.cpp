@@ -172,6 +172,29 @@ namespace Orc
             }
         }
 
+        void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists)
+        {
+            std::vector<ID3D12CommandList*> tempLists;
+            for (uint32 i = 0; i < numLists; ++i)
+            {
+                auto rawList = lists[i]->getRawCommandList();
+                tempLists.push_back(reinterpret_cast<ID3D12CommandList*>(rawList));
+            }
+
+            switch (type)
+            {
+            case CommandList::CommandListTypes::CLT_GRAPHICS:
+                mGraphicsQueue->ExecuteCommandLists(numLists, tempLists.data());
+                break;
+            case CommandList::CommandListTypes::CLT_COPY:
+                mCopyQueue->ExecuteCommandLists(numLists, tempLists.data());
+                break;
+            case CommandList::CommandListTypes::CLT_COMPUTE:
+                mComputeQueue->ExecuteCommandLists(numLists, tempLists.data());
+                break;
+            }
+        }
+
     private:
         Microsoft::WRL::ComPtr<IDXGIAdapter4> mAdapter;
         Microsoft::WRL::ComPtr<ID3D12Debug> mDebugController;

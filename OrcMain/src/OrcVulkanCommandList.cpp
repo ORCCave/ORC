@@ -37,7 +37,7 @@ namespace Orc
             CHECK_VK_RESULT(vkEndCommandBuffer(mCommandBuffer));
         }
 
-        void* getRawGraphicsCommandList() const
+        void* getRawCommandList() const
         {
             return mCommandBuffer;
         }
