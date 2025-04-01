@@ -24,19 +24,19 @@ namespace Orc
                 d3d12Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
                 break;
             }
-            d3d12Device->CreateCommandAllocator(d3d12Type, IID_PPV_ARGS(&mCommandAllocator));
-            d3d12Device->CreateCommandList1(0, d3d12Type, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&mCommandList));
+            CHECK_DX_RESULT(d3d12Device->CreateCommandAllocator(d3d12Type, IID_PPV_ARGS(&mCommandAllocator)));
+            CHECK_DX_RESULT(d3d12Device->CreateCommandList1(0, d3d12Type, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&mCommandList)));
         }
 
         void begin()
         {
-            mCommandAllocator->Reset();
-            mCommandList->Reset(mCommandAllocator.Get(), nullptr);
+            CHECK_DX_RESULT(mCommandAllocator->Reset());
+            CHECK_DX_RESULT(mCommandList->Reset(mCommandAllocator.Get(), nullptr));
         }
 
         void end()
         {
-            mCommandList->Close();
+            CHECK_DX_RESULT(mCommandList->Close());
         }
 
         void* getRawCommandList() const

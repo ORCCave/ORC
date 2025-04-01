@@ -21,8 +21,20 @@
 #include <combaseapi.h>
 #include <libloaderapi.h>
 
+#include "OrcException.h"
+
 namespace Orc
 {
+    inline void CHECK_DX_RESULT(HRESULT hr)
+    {
+        if (FAILED(hr))
+        {
+#ifdef _DEBUG
+            throw OrcException("Error code:" + std::to_string(hr));
+#endif
+        }
+    }
+
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);
     std::shared_ptr<CommandList> createD3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type);
 }
