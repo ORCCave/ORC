@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(ORC)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 if(APPLE OR (NOT WIN32 AND NOT UNIX))
     message(FATAL_ERROR "Orc does not support this platform")
