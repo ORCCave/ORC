@@ -19,6 +19,7 @@
 #include <wrl/wrappers/corewrappers.h>
 
 #include <combaseapi.h>
+#include <comdef.h>
 #include <libloaderapi.h>
 
 #include "OrcException.h"
@@ -30,7 +31,10 @@ namespace Orc
         if (FAILED(hr))
         {
 #ifdef _DEBUG
-            throw OrcException("Error code:" + std::to_string(hr));
+            std::string s = std::format("(0x{:08x}) ", static_cast<unsigned int>(hr));
+            _com_error err(hr);
+            LPCTSTR errMsg = err.ErrorMessage();
+            throw OrcException(s + errMsg);
 #endif
         }
     }
