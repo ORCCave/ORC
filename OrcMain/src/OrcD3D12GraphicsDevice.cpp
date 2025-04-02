@@ -15,6 +15,10 @@ namespace Orc
                 mHD3D12 = LoadLibraryW(L"d3d12.dll");
             if (mHDXGI == NULL)
                 mHDXGI = LoadLibraryW(L"dxgi.dll");
+            if (!mHD3D12 || !mHDXGI)
+            {
+                throw OrcException("Can't find D3D dll library.");
+            }
 #ifdef _DEBUG
             if (mHD3D12Debug == NULL)
                 mHD3D12Debug = LoadLibraryW(L"D3D12SDKLayers.dll");
@@ -77,10 +81,8 @@ namespace Orc
             if (mHD3D12Debug)
             {
                 auto pfnD3D12GetDebugInterface = reinterpret_cast<PFN_D3D12_GET_DEBUG_INTERFACE>(GetProcAddress(mHD3D12, "D3D12GetDebugInterface"));
-                if (SUCCEEDED(pfnD3D12GetDebugInterface(IID_PPV_ARGS(&mDebugController))))
-                {
-                    mDebugController->EnableDebugLayer();
-                }
+                CHECK_DX_RESULT(pfnD3D12GetDebugInterface(IID_PPV_ARGS(&mDebugController)));
+                mDebugController->EnableDebugLayer();
             }
 
             if (mHDXGIDebug)
@@ -89,8 +91,8 @@ namespace Orc
             }
 #endif
             auto pfnCreateDXGIFactory2 = reinterpret_cast<decltype(&CreateDXGIFactory2)>(GetProcAddress(mHDXGI, "CreateDXGIFactory2"));
-            pfnCreateDXGIFactory2(factoryFlag, IID_PPV_ARGS(&mFactory));
-            mFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&mAdapter));
+            CHECK_DX_RESULT(pfnCreateDXGIFactory2(factoryFlag, IID_PPV_ARGS(&mFactory)));
+            CHECK_DX_RESULT(mFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&mAdapter)));
 
             auto pfnD3D12CreateDevice = reinterpret_cast<PFN_D3D12_CREATE_DEVICE>(GetProcAddress(mHD3D12, "D3D12CreateDevice"));
             pfnD3D12CreateDevice(mAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
