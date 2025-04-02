@@ -8,10 +8,9 @@ namespace Orc
 {
     std::shared_ptr<GraphicsDevice> Root::createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type)
     {
-        std::shared_ptr<GraphicsDevice> device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type);
-        if (device == nullptr)
-            throw OrcException("Invalid GraphicsDeviceType");
-        return device;
+        if (auto device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type))
+            return device;
+        throw OrcException("Invalid GraphicsDeviceType");
     }
 
     void Root::destroyGraphicsDevice(GraphicsDevice* device)

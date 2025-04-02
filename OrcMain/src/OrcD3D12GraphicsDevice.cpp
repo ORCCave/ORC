@@ -15,26 +15,22 @@ namespace Orc
                 mHD3D12 = LoadLibraryW(L"d3d12.dll");
             if (mHDXGI == NULL)
                 mHDXGI = LoadLibraryW(L"dxgi.dll");
-            if (!mHD3D12 || !mHDXGI)
-            {
-                throw OrcException("Can't find D3D dll library.");
-            }
+            if (!mHD3D12 || !mHDXGI) { throw OrcException("Can't find D3D dll library"); }
 #ifdef _DEBUG
             if (mHD3D12Debug == NULL)
                 mHD3D12Debug = LoadLibraryW(L"D3D12SDKLayers.dll");
             if (mHDXGIDebug == NULL)
                 mHDXGIDebug = LoadLibraryW(L"dxgidebug.dll");
-
 #endif
             _createDevice();
             _createQueue();
             _createSwapChain(hwnd, width, height);
             mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
-            mDevice->CreateFence(mFenceValue[mFrameIndex]++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
+            CHECK_DX_RESULT(mDevice->CreateFence(mFenceValue[mFrameIndex]++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
             mEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
-            mDevice->CreateFence(mCopyFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mCopyFence));
+            CHECK_DX_RESULT(mDevice->CreateFence(mCopyFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mCopyFence)));
             mCopyEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
-            mDevice->CreateFence(mComputeFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mComputeFence));
+            CHECK_DX_RESULT(mDevice->CreateFence(mComputeFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mComputeFence)));
             mComputeEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
         }
 
@@ -43,30 +39,6 @@ namespace Orc
             _wait(CommandList::CommandListTypes::CLT_GRAPHICS);
             _wait(CommandList::CommandListTypes::CLT_COPY);
             _wait(CommandList::CommandListTypes::CLT_COMPUTE);
-            mAdapter.Reset();
-            mDebugController.Reset();
-            mFactory.Reset();
-            mDevice.Reset();
-            mGraphicsQueue.Reset();
-            mCopyQueue.Reset();
-            mComputeQueue.Reset();
-            mSwapChain.Reset();
-            mFence.Reset();
-            mEvent.Close();
-            mCopyFence.Reset();
-            mCopyEvent.Close();
-            mComputeFence.Reset();
-            mComputeEvent.Close();
-            FreeLibrary(mHD3D12);
-            FreeLibrary(mHDXGI);
-            if (mHD3D12Debug)
-            {
-                FreeLibrary(mHD3D12Debug);
-            }
-            if (mHDXGIDebug)
-            {
-                FreeLibrary(mHDXGIDebug);
-            }
         }
 
         void* getRawGraphicsDevice() const
@@ -91,22 +63,24 @@ namespace Orc
             }
 #endif
             auto pfnCreateDXGIFactory2 = reinterpret_cast<decltype(&CreateDXGIFactory2)>(GetProcAddress(mHDXGI, "CreateDXGIFactory2"));
+            if (!pfnCreateDXGIFactory2) { throw OrcException("Can't find CreateDXGIFactory2"); }
             CHECK_DX_RESULT(pfnCreateDXGIFactory2(factoryFlag, IID_PPV_ARGS(&mFactory)));
             CHECK_DX_RESULT(mFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&mAdapter)));
 
             auto pfnD3D12CreateDevice = reinterpret_cast<PFN_D3D12_CREATE_DEVICE>(GetProcAddress(mHD3D12, "D3D12CreateDevice"));
-            pfnD3D12CreateDevice(mAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
+            if (!pfnD3D12CreateDevice) { throw OrcException("Can't find D3D12CreateDevice"); }
+            CHECK_DX_RESULT(pfnD3D12CreateDevice(mAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)));
         }
 
         void _createQueue()
         {
             D3D12_COMMAND_QUEUE_DESC queueDesc{};
             queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-            mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mGraphicsQueue));
+            CHECK_DX_RESULT(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mGraphicsQueue)));
             queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-            mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCopyQueue));
+            CHECK_DX_RESULT(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCopyQueue)));
             queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-            mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mComputeQueue));
+            CHECK_DX_RESULT(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mComputeQueue)));
         }
 
         void _createSwapChain(HWND hwnd, uint32 width, uint32 height)
@@ -125,14 +99,14 @@ namespace Orc
             DXGI_SWAP_CHAIN_FULLSCREEN_DESC fsSwapChainDesc{};
             fsSwapChainDesc.Windowed = TRUE;
             Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
-            mFactory->CreateSwapChainForHwnd(mGraphicsQueue.Get(), hwnd, &scDesc, &fsSwapChainDesc, nullptr, &swapChain);
-            mFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER);
-            swapChain.As(&mSwapChain);
+            CHECK_DX_RESULT(mFactory->CreateSwapChainForHwnd(mGraphicsQueue.Get(), hwnd, &scDesc, &fsSwapChainDesc, nullptr, &swapChain));
+            CHECK_DX_RESULT(mFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER));
+            CHECK_DX_RESULT(swapChain.As(&mSwapChain));
         }
 
         void endDraw()
         {
-            mSwapChain->Present(1, 0);
+            CHECK_DX_RESULT(mSwapChain->Present(1, 0));
             moveToNextFrame();
         }
 
@@ -143,8 +117,11 @@ namespace Orc
             mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
             if (mFence->GetCompletedValue() < mFenceValue[mFrameIndex])
             {
-                mFence->SetEventOnCompletion(mFenceValue[mFrameIndex], mEvent.Get());
-                WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE);
+                CHECK_DX_RESULT(mFence->SetEventOnCompletion(mFenceValue[mFrameIndex], mEvent.Get()));
+                if (WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
+                {
+                    throw OrcException("WaitForSingleObjectEx failed");
+                }
             }
             mFenceValue[mFrameIndex] = currentFenceValue + 1;
         }
@@ -159,19 +136,28 @@ namespace Orc
             switch (type)
             {
             case CommandList::CommandListTypes::CLT_GRAPHICS:
-                mGraphicsQueue->Signal(mFence.Get(), mFenceValue[mFrameIndex]);
-                mFence->SetEventOnCompletion(mFenceValue[mFrameIndex]++, mEvent.Get());
-                WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE);
+                CHECK_DX_RESULT(mGraphicsQueue->Signal(mFence.Get(), mFenceValue[mFrameIndex]));
+                CHECK_DX_RESULT(mFence->SetEventOnCompletion(mFenceValue[mFrameIndex]++, mEvent.Get()));
+                if (WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
+                {
+                    throw OrcException("WaitForSingleObjectEx failed");
+                }
                 break;
             case CommandList::CommandListTypes::CLT_COPY:
                 mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue);
                 mCopyFence->SetEventOnCompletion(mCopyFenceValue++, mCopyEvent.Get());
-                WaitForSingleObjectEx(mCopyEvent.Get(), INFINITE, FALSE);
+                if (WaitForSingleObjectEx(mCopyEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
+                {
+                    throw OrcException("WaitForSingleObjectEx failed");
+                }
                 break;
             case CommandList::CommandListTypes::CLT_COMPUTE:
                 mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue);
                 mComputeFence->SetEventOnCompletion(mComputeFenceValue++, mComputeEvent.Get());
-                WaitForSingleObjectEx(mComputeEvent.Get(), INFINITE, FALSE);
+                if (WaitForSingleObjectEx(mComputeEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
+                {
+                    throw OrcException("WaitForSingleObjectEx failed");
+                }
                 break;
             }
         }
