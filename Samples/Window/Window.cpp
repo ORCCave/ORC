@@ -1,5 +1,6 @@
 #include "Orc.h"
 
+#include <exception>
 #include <iostream>
 
 int main()
