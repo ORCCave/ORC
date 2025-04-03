@@ -69,17 +69,16 @@ namespace Orc
         {
             auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
             auto findQueueFamilyEx = [&queueFamilies](vk::QueueFlagBits flag, const std::vector<int32>& excludes = {}) -> int32_t
+            {
+                for (int32 i = 0; i < static_cast<int32>(queueFamilies.size()); ++i)
                 {
-                    for (int32 i = 0; i < static_cast<int32>(queueFamilies.size()); ++i)
-                    {
-
-                        if (std::find(excludes.begin(), excludes.end(), i) != excludes.end())
-                            continue;
-                        if (queueFamilies[i].queueFlags & flag)
-                            return i;
-                    }
-                    return -1;
-                };
+                    if (std::find(excludes.begin(), excludes.end(), i) != excludes.end())
+                        continue;
+                    if (queueFamilies[i].queueFlags & flag)
+                        return i;
+                }
+                return -1;
+            };
 
             mGraphicsFamily = findQueueFamilyEx(vk::QueueFlagBits::eGraphics);
             if (mGraphicsFamily == -1)

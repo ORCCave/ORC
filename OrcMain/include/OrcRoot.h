@@ -13,7 +13,6 @@ namespace Orc
     {
     public:
         std::shared_ptr<GraphicsDevice> createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type);
-        void destroyGraphicsDevice(GraphicsDevice* device);
         void startRendering(GraphicsDevice* device);
 
         ORC_DISABLE_COPY_AND_MOVE(Root)

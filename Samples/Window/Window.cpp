@@ -11,10 +11,8 @@ int main()
         auto device = root->createGraphicsDevice(Orc::GraphicsDevice::GraphicsDeviceTypes::GDT_D3D12);
         root->startRendering(device.get());
     }
-    catch (const Orc::OrcException& ex)
-    {
-        std::cout << ex.what() << std::endl;
-    }
+    catch (const std::exception& e) { std::cerr << e.what() << std::endl; }
+    catch (...) { std::cerr << "Unknown exception caught." << std::endl; }
 
     return 0;
 }

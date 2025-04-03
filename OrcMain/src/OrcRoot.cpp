@@ -13,11 +13,6 @@ namespace Orc
         throw OrcException("Invalid GraphicsDeviceType");
     }
 
-    void Root::destroyGraphicsDevice(GraphicsDevice* device)
-    {
-        delete device;
-    }
-
     void Root::startRendering(GraphicsDevice* device)
     {
         SDL_Event event;
