@@ -11,23 +11,17 @@ namespace Orc
         VulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type)
             : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool)
         {
-            VkCommandBufferAllocateInfo allocInfo = {};
-            allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            allocInfo.commandPool = mCmdPool;
-            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            allocInfo.commandBufferCount = 1;
-            vk::CommandBufferAllocateInfo createInfo(allocInfo);
-            vk::Device wrapDevice(mDevice);
-            std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
-            mCommandBuffer = wrapDevice.allocateCommandBuffersUnique(createInfo);
+            vk::CommandBufferAllocateInfo allocInfo{
+                mCmdPool,
+                vk::CommandBufferLevel::ePrimary,
+                1
+            };
+            mCommandBuffer = mDevice.allocateCommandBuffersUnique(allocInfo);
         }
 
         void begin()
         {
-            VkCommandBufferBeginInfo rawBeginInfo = {};
-            rawBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            rawBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-            vk::CommandBufferBeginInfo beginInfo(rawBeginInfo);
+            vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
             mCommandBuffer[0]->begin(beginInfo);
         }
 
@@ -41,8 +35,8 @@ namespace Orc
             return static_cast<VkCommandBuffer>(mCommandBuffer[0].get());
         }
 
-        VkDevice mDevice;
-        VkCommandPool mCmdPool;
+        vk::Device mDevice;
+        vk::CommandPool mCmdPool;
         std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
     };
 
