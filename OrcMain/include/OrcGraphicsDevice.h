@@ -2,6 +2,7 @@
 
 #include "OrcDefines.h"
 #include "OrcGraphicsCommandList.h"
+#include "OrcGraphicsResource.h"
 #include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 

@@ -5,7 +5,6 @@
 #include "OrcException.h"
 #include "OrcGraphicsCommandList.h"
 #include "OrcGraphicsDevice.h"
-#include "OrcGraphicsFormat.h"
 #include "OrcGraphicsResource.h"
 #include "OrcRoot.h"
 #include "OrcSingleton.h"
