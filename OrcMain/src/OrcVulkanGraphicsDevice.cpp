@@ -68,7 +68,7 @@ namespace Orc
         void _createDevice()
         {
             auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
-            auto findQueueFamilyEx = [&queueFamilies](vk::QueueFlagBits flag, const std::vector<int32>& excludes = {}) -> int32_t
+            auto findQueueFamilyEx = [&queueFamilies](vk::QueueFlagBits flag, const std::vector<int32>& excludes = {}) -> int32
             {
                 for (int32 i = 0; i < static_cast<int32>(queueFamilies.size()); ++i)
                 {
@@ -195,7 +195,7 @@ namespace Orc
 
         ~VulkanGraphicsDevice() { mDevice->waitIdle(); }
 
-        void acquireNextImage()
+        void beginDraw()
         {
             auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore.get());
             mFrameIndex = frameIndex.value;
@@ -203,6 +203,28 @@ namespace Orc
 
         void endDraw()
         {
+            vk::PresentInfoKHR presentInfo{};
+            presentInfo.swapchainCount = 1;
+            auto swapchainHandle = mSwapChain.get();
+            presentInfo.pSwapchains = &swapchainHandle;
+            presentInfo.pImageIndices = &mFrameIndex;
+            vk::Semaphore needSemaphres;
+            if (mHasRenderSubmission)
+            {
+                needSemaphres = mRenderFinishedSemaphore.get();
+            }
+            else
+            {
+                needSemaphres = mImageAvailableSemaphore.get();
+            }
+            presentInfo.waitSemaphoreCount = 1;
+            presentInfo.pWaitSemaphores = &needSemaphres;
+
+            if (mGraphicsQueue.presentKHR(presentInfo) != vk::Result::eSuccess)
+            {
+                throw OrcException("Failed to present image");
+            }
+            mHasRenderSubmission = false;
         }
 
         void* getRawGraphicsDevice() const
@@ -230,7 +252,27 @@ namespace Orc
 
         void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists)
         {
-
+            std::vector<vk::CommandBuffer> commandBuffers;
+            for (uint32 i = 0; i < numLists; ++i)
+            {
+                auto rawList = lists[i]->getRawCommandList();
+                commandBuffers.emplace_back(static_cast<VkCommandBuffer>(rawList));
+            }
+            vk::SubmitInfo submitInfo;
+            submitInfo.commandBufferCount = numLists;
+            submitInfo.pCommandBuffers = commandBuffers.data();
+            switch (type)
+            {
+            case CommandList::CommandListTypes::CLT_GRAPHICS:
+                mGraphicsQueue.submit(submitInfo);
+                break;
+            case CommandList::CommandListTypes::CLT_COPY:
+                mTransferQueue.submit(submitInfo);
+                break;
+            case CommandList::CommandListTypes::CLT_COMPUTE:
+                mComputeQueue.submit(submitInfo);
+                break;
+            }
         }
 
         int32 mGraphicsFamily = -1;
@@ -238,6 +280,8 @@ namespace Orc
         int32 mTransferFamily = -1;
 
         uint32 mFrameIndex = 0;
+
+        bool mHasRenderSubmission = false;
 
         vk::UniqueInstance mInstance;
         vk::PhysicalDevice mPhysicalDevice;
@@ -259,9 +303,12 @@ namespace Orc
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
     {
-        auto props = SDL_GetWindowProperties((SDL_Window*)windowHandle);
+        auto props = SDL_GetWindowProperties(static_cast<SDL_Window*>(windowHandle));
+        if (!props) { throw OrcException(SDL_GetError()); }
         auto instance = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
+        if (!instance) { throw OrcException(SDL_GetError()); }
         auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+        if (!hwnd) { throw OrcException(SDL_GetError()); }
         return std::make_shared<VulkanGraphicsDevice>(instance, hwnd, width, height);
     }
 }

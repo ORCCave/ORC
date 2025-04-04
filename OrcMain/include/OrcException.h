@@ -6,10 +6,12 @@ namespace Orc
 {
     class OrcException : public std::runtime_error {
     public:
-        OrcException(const std::string& message)
-            : std::runtime_error(message), location(std::source_location::current()), trace(std::stacktrace::current())
+        OrcException(const std::string& message, const std::source_location& location = std::source_location::current(), const std::stacktrace& trace = std::stacktrace::current())
+            : std::runtime_error(makeFullMessage(message, location, trace)) {}
+    private:
+        std::string makeFullMessage(const std::string& message, const std::source_location& location, const std::stacktrace& trace)
         {
-            fullMessage = std::format(
+            return std::format(
                 "Error: {}\nFile: {}, Line: {}\nFunction: {}\nStack trace:\n{}",
                 message,
                 location.file_name(),
@@ -18,12 +20,5 @@ namespace Orc
                 std::to_string(trace)
             );
         }
-
-        const char* what() const noexcept override { return fullMessage.c_str(); }
-
-    private:
-        std::source_location location;
-        std::stacktrace trace;
-        std::string fullMessage;
     };
 }

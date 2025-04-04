@@ -217,8 +217,10 @@ namespace Orc
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
     {
-        auto props = SDL_GetWindowProperties((SDL_Window*)windowHandle);
+        auto props = SDL_GetWindowProperties(static_cast<SDL_Window*>(windowHandle));
+        if (!props) { throw OrcException(SDL_GetError()); }
         auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+        if (!hwnd) { throw OrcException(SDL_GetError()); }
         return std::make_shared<D3D12GraphicsDevice>((HWND)hwnd, width, height);
     }
 }

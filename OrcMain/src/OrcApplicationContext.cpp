@@ -19,13 +19,13 @@ namespace Orc
     {
         if (!SDL_Init(SDL_INIT_VIDEO))
         {
-            throw OrcException("SDL_Init failed");
+            throw OrcException(SDL_GetError());
         }
         mWindowHandle = SDL_CreateWindow(mWindowTitle.c_str(), mWidth, mHeight, 0);
         if (!mWindowHandle)
         {
             SDL_Quit();
-            throw OrcException("SDL_CreateWindow failed");
+            throw OrcException(SDL_GetError());
         }
         mpimpl = std::make_unique<impl>(mWindowHandle, mWidth, mHeight);
     }
