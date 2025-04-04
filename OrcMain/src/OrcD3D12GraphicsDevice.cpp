@@ -32,6 +32,8 @@ namespace Orc
             mCopyEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
             CHECK_DX_RESULT(mDevice->CreateFence(mComputeFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mComputeFence)));
             mComputeEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
+
+            _createRTV();
         }
 
         ~D3D12GraphicsDevice()
@@ -185,6 +187,39 @@ namespace Orc
             }
         }
 
+        void _createRTV()
+        {
+            D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+            rtvHeapDesc.NumDescriptors = 3;
+            rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+            rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+            CHECK_DX_RESULT(mDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&mRtvHeap)));
+            D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = mRtvHeap->GetCPUDescriptorHandleForHeapStart();
+            mRtvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+            for (uint32 i = 0; i < 3; ++i)
+            {
+                Microsoft::WRL::ComPtr<ID3D12Resource> renderTarget;
+                CHECK_DX_RESULT(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&renderTarget)));
+                mDevice->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
+                rtvHandle.ptr += mRtvDescriptorSize;
+            }
+        }
+
+        D3D12_CPU_DESCRIPTOR_HANDLE getCurrentRenderTargetView() const
+        {
+            D3D12_CPU_DESCRIPTOR_HANDLE handle = mRtvHeap->GetCPUDescriptorHandleForHeapStart();
+            handle.ptr += mFrameIndex * mRtvDescriptorSize;
+            return handle;
+        }
+
+        void clearSwapChainColor(CommandList* list, float r, float g, float b, float a)
+        {
+            auto rawList = static_cast<ID3D12GraphicsCommandList*>(list->getRawCommandList());
+            auto rtvHandle = getCurrentRenderTargetView();
+            float colorRGBA[4] = { r, g, b, a };
+            rawList->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
+        }
+
     private:
         Microsoft::WRL::ComPtr<IDXGIAdapter4> mAdapter;
         Microsoft::WRL::ComPtr<ID3D12Debug> mDebugController;
@@ -208,11 +243,14 @@ namespace Orc
         uint64 mComputeFenceValue = 0;
         Microsoft::WRL::ComPtr<ID3D12Fence1> mComputeFence;
         Microsoft::WRL::Wrappers::Event mComputeEvent;
+        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 
         inline static HMODULE mHD3D12 = NULL;
         inline static HMODULE mHDXGI = NULL;
         inline static HMODULE mHD3D12Debug = NULL;
         inline static HMODULE mHDXGIDebug = NULL;
+
+        UINT mRtvDescriptorSize;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)

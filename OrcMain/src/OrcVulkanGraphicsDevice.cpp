@@ -25,6 +25,8 @@ namespace Orc
             _createSemaphore();
         }
 
+        ~VulkanGraphicsDevice() { mDevice->waitIdle(); }
+
         void _createInstance()
         {
             std::vector<const char*> extensions =
@@ -56,8 +58,7 @@ namespace Orc
             mPhysicalDevice = physicalDevices[0];
             for (const auto& device : physicalDevices)
             {
-                vk::PhysicalDeviceProperties properties = device.getProperties();
-                if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+                if (auto properties = device.getProperties(); properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
                 {
                     mPhysicalDevice = device;
                     break;
@@ -107,12 +108,13 @@ namespace Orc
                 vk::DeviceQueueCreateInfo({}, mComputeFamily, 1, &queuePriority),
                 vk::DeviceQueueCreateInfo({}, mTransferFamily, 1, &queuePriority)
             };
-            vk::PhysicalDeviceFeatures deviceFeatures{};
+
             std::vector<const char*> extensions =
             {
                 "VK_KHR_swapchain",
-                "VK_KHR_dynamic_rendering"
             };
+            // Open dynamic rendering
+            vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures(true);
             vk::DeviceCreateInfo createInfo(
                 {},
                 static_cast<uint32>(queueCreateInfos.size()),
@@ -121,7 +123,8 @@ namespace Orc
                 nullptr,
                 static_cast<uint32>(extensions.size()),
                 extensions.data(),
-                &deviceFeatures
+                nullptr,
+                &dynamicRenderingFeatures
             );
             mDevice = mPhysicalDevice.createDeviceUnique(createInfo);
         }
@@ -192,8 +195,6 @@ namespace Orc
             mImageAvailableSemaphore = mDevice->createSemaphoreUnique(createInfo);
             mRenderFinishedSemaphore = mDevice->createSemaphoreUnique(createInfo);
         }
-
-        ~VulkanGraphicsDevice() { mDevice->waitIdle(); }
 
         void beginDraw()
         {
@@ -273,6 +274,14 @@ namespace Orc
                 mComputeQueue.submit(submitInfo);
                 break;
             }
+        }
+
+        void clearSwapChainColor(CommandList* list, float r, float g, float b, float a)
+        {
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
+            vk::ClearColorValue clearColor(r, g, b, a);
+
+            //VkPhysicalDeviceVulkan13Features
         }
 
         int32 mGraphicsFamily = -1;

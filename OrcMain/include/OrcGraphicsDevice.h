@@ -18,6 +18,7 @@ namespace Orc
         };
 
         virtual void* getRawGraphicsDevice() const = 0;
+        virtual void clearSwapChainColor(CommandList* list, float r, float g, float b, float a) = 0;
 
         virtual std::shared_ptr<CommandList> createCommandList(CommandList::CommandListTypes type) = 0;
 
