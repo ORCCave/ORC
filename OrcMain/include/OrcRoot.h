@@ -12,7 +12,7 @@ namespace Orc
     class Root : public Singleton<Root>
     {
     public:
-        std::shared_ptr<GraphicsDevice> createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type);
+        std::shared_ptr<GraphicsDevice> createGraphicsDevice(GraphicsDevice::GraphicsDeviceType type);
         void startRendering(GraphicsDevice* device);
 
         ORC_DISABLE_COPY_AND_MOVE(Root)

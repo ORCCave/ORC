@@ -8,19 +8,19 @@ namespace Orc
     class D3D12CommandList : public GraphicsCommandList
     {
     public:
-        D3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListTypes type)
+        D3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListType type)
         {
             auto d3d12Device = static_cast<ID3D12Device4*>(device->getRawGraphicsDevice());
             D3D12_COMMAND_LIST_TYPE d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
             switch (type)
             {
-            case GraphicsCommandListTypes::GCLT_GRAPHICS:
+            case GraphicsCommandListType::GCLT_GRAPHICS:
                 d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
                 break;
-            case GraphicsCommandListTypes::GCLT_COPY:
+            case GraphicsCommandListType::GCLT_COPY:
                 d3d12Type = D3D12_COMMAND_LIST_TYPE_COPY;
                 break;
-            case GraphicsCommandListTypes::GCLT_COMPUTE:
+            case GraphicsCommandListType::GCLT_COMPUTE:
                 d3d12Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
                 break;
             }
@@ -48,7 +48,7 @@ namespace Orc
         Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCommandAllocator;
     };
 
-    std::shared_ptr<GraphicsCommandList> createD3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListTypes type)
+    std::shared_ptr<GraphicsCommandList> createD3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListType type)
     {
         return std::make_shared<D3D12CommandList>(device, type);
     }

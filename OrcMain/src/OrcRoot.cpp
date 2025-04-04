@@ -6,7 +6,7 @@
 
 namespace Orc
 {
-    std::shared_ptr<GraphicsDevice> Root::createGraphicsDevice(GraphicsDevice::GraphicsDeviceTypes type)
+    std::shared_ptr<GraphicsDevice> Root::createGraphicsDevice(GraphicsDevice::GraphicsDeviceType type)
     {
         if (auto device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type))
             return device;

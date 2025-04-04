@@ -8,7 +8,7 @@ namespace Orc
     class VulkanCommandList : public GraphicsCommandList
     {
     public:
-        VulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListTypes type)
+        VulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type)
             : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool)
         {
             vk::CommandBufferAllocateInfo allocInfo{
@@ -40,7 +40,7 @@ namespace Orc
         std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
     };
 
-    std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListTypes type)
+    std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type)
     {
         return std::make_shared<VulkanCommandList>(device, cmdPool, type);
     }

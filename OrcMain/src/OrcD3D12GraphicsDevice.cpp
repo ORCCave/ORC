@@ -9,7 +9,7 @@ namespace Orc
     class D3D12GraphicsDevice : public GraphicsDevice, public Singleton<D3D12GraphicsDevice>
     {
     public:
-        D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceTypes::GDT_D3D12)
+        D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height)
         {
             if(mHD3D12 == NULL)
                 mHD3D12 = LoadLibraryW(L"d3d12.dll");
@@ -38,9 +38,9 @@ namespace Orc
 
         ~D3D12GraphicsDevice()
         {
-            _wait(GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS);
-            _wait(GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY);
-            _wait(GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE);
+            _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
+            _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
         }
 
         void* getRawGraphicsDevice() const
@@ -128,16 +128,16 @@ namespace Orc
             mFenceValue[mFrameIndex] = currentFenceValue + 1;
         }
 
-        std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListTypes type)
+        std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type)
         {
             return createD3D12CommandList(this, type);
         }
 
-        void _wait(GraphicsCommandList::GraphicsCommandListTypes type)
+        void _wait(GraphicsCommandList::GraphicsCommandListType type)
         {
             switch (type)
             {
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
                 CHECK_DX_RESULT(mGraphicsQueue->Signal(mFence.Get(), mFenceValue[mFrameIndex]));
                 CHECK_DX_RESULT(mFence->SetEventOnCompletion(mFenceValue[mFrameIndex]++, mEvent.Get()));
                 if (WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
@@ -145,7 +145,7 @@ namespace Orc
                     throw OrcException("WaitForSingleObjectEx failed");
                 }
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue);
                 mCopyFence->SetEventOnCompletion(mCopyFenceValue++, mCopyEvent.Get());
                 if (WaitForSingleObjectEx(mCopyEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
@@ -153,7 +153,7 @@ namespace Orc
                     throw OrcException("WaitForSingleObjectEx failed");
                 }
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
                 mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue);
                 mComputeFence->SetEventOnCompletion(mComputeFenceValue++, mComputeEvent.Get());
                 if (WaitForSingleObjectEx(mComputeEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
@@ -164,7 +164,7 @@ namespace Orc
             }
         }
 
-        void executeCommandList(GraphicsCommandList::GraphicsCommandListTypes type, uint32 numLists, GraphicsCommandList* const* lists)
+        void executeCommandList(GraphicsCommandList::GraphicsCommandListType type, uint32 numLists, GraphicsCommandList* const* lists)
         {
             std::vector<ID3D12CommandList*> tempLists;
             for (uint32 i = 0; i < numLists; ++i)
@@ -175,13 +175,13 @@ namespace Orc
 
             switch (type)
             {
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
                 mGraphicsQueue->ExecuteCommandLists(numLists, tempLists.data());
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 mCopyQueue->ExecuteCommandLists(numLists, tempLists.data());
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
                 mComputeQueue->ExecuteCommandLists(numLists, tempLists.data());
                 break;
             }

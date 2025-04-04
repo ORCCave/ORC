@@ -12,7 +12,7 @@ namespace Orc
     class VulkanGraphicsDevice : public GraphicsDevice, public Singleton<VulkanGraphicsDevice>
     {
     public:
-        VulkanGraphicsDevice(void* instance, void* windowHandle, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceTypes::GDT_VULKAN)
+        VulkanGraphicsDevice(void* instance, void* windowHandle, uint32 width, uint32 height)
         {
             _createInstance();
             _createPhysicalDevice();
@@ -233,25 +233,25 @@ namespace Orc
             return static_cast<VkDevice>(mDevice.get());
         }
 
-        std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListTypes type)
+        std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type)
         {
             std::shared_ptr<GraphicsCommandList> list;
             switch (type)
             {
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
                 list = createVulkanCommandList(this, static_cast<VkCommandPool>(mGraphicsCommandPool.get()), type);
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 list = createVulkanCommandList(this, static_cast<VkCommandPool>(mTransferCommandPool.get()), type);
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
                 list = createVulkanCommandList(this, static_cast<VkCommandPool>(mComputeCommandPool.get()), type);
                 break;
             }
             return list;
         }
 
-        void executeCommandList(GraphicsCommandList::GraphicsCommandListTypes type, uint32 numLists, GraphicsCommandList* const* lists)
+        void executeCommandList(GraphicsCommandList::GraphicsCommandListType type, uint32 numLists, GraphicsCommandList* const* lists)
         {
             std::vector<vk::CommandBuffer> commandBuffers;
             for (uint32 i = 0; i < numLists; ++i)
@@ -264,13 +264,13 @@ namespace Orc
             submitInfo.pCommandBuffers = commandBuffers.data();
             switch (type)
             {
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
                 mGraphicsQueue.submit(submitInfo);
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 mTransferQueue.submit(submitInfo);
                 break;
-            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
                 mComputeQueue.submit(submitInfo);
                 break;
             }

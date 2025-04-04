@@ -8,7 +8,7 @@ namespace Orc
     class GraphicsCommandList
     {
     public:
-        enum class GraphicsCommandListTypes
+        enum class GraphicsCommandListType
         {
             GCLT_GRAPHICS,
             GCLT_COPY,
