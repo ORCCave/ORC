@@ -25,8 +25,6 @@ namespace Orc
         GraphicsCommandList() = default;
         virtual ~GraphicsCommandList() = default;
 
-        void* mInternalCommandPool;
-
         friend class GraphicsDevice;
     };
 }
