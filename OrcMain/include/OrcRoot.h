@@ -16,7 +16,7 @@ namespace Orc
         void startRendering(GraphicsDevice* device);
 
         ORC_DISABLE_COPY_AND_MOVE(Root)
-    private:
+    protected:
         Root(void* handle, uint32 w, uint32 h) : 
             mWindowHandle(handle), mWidthForSwapChain(w), mHeightForSwapChain(h) {}
 
