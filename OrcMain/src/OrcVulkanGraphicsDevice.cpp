@@ -233,25 +233,25 @@ namespace Orc
             return static_cast<VkDevice>(mDevice.get());
         }
 
-        std::shared_ptr<CommandList> createCommandList(CommandList::CommandListTypes type)
+        std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListTypes type)
         {
-            std::shared_ptr<CommandList> list;
+            std::shared_ptr<GraphicsCommandList> list;
             switch (type)
             {
-            case CommandList::CommandListTypes::CLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
                 list = createVulkanCommandList(this, static_cast<VkCommandPool>(mGraphicsCommandPool.get()), type);
                 break;
-            case CommandList::CommandListTypes::CLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
                 list = createVulkanCommandList(this, static_cast<VkCommandPool>(mTransferCommandPool.get()), type);
                 break;
-            case CommandList::CommandListTypes::CLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
                 list = createVulkanCommandList(this, static_cast<VkCommandPool>(mComputeCommandPool.get()), type);
                 break;
             }
             return list;
         }
 
-        void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists)
+        void executeCommandList(GraphicsCommandList::GraphicsCommandListTypes type, uint32 numLists, GraphicsCommandList* const* lists)
         {
             std::vector<vk::CommandBuffer> commandBuffers;
             for (uint32 i = 0; i < numLists; ++i)
@@ -264,22 +264,22 @@ namespace Orc
             submitInfo.pCommandBuffers = commandBuffers.data();
             switch (type)
             {
-            case CommandList::CommandListTypes::CLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
                 mGraphicsQueue.submit(submitInfo);
                 break;
-            case CommandList::CommandListTypes::CLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
                 mTransferQueue.submit(submitInfo);
                 break;
-            case CommandList::CommandListTypes::CLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
                 mComputeQueue.submit(submitInfo);
                 break;
             }
         }
 
-        void clearSwapChainColor(CommandList* list, float r, float g, float b, float a)
+        void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a)
         {
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
-            vk::ClearColorValue clearColor(r, g, b, a);
+            //vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
+            //vk::ClearColorValue clearColor(r, g, b, a);
 
             //VkPhysicalDeviceVulkan13Features
         }

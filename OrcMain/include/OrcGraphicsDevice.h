@@ -1,7 +1,7 @@
 #pragma once
 
-#include "OrcCommandList.h"
 #include "OrcDefines.h"
+#include "OrcGraphicsCommandList.h"
 #include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
@@ -18,11 +18,11 @@ namespace Orc
         };
 
         virtual void* getRawGraphicsDevice() const = 0;
-        virtual void clearSwapChainColor(CommandList* list, float r, float g, float b, float a) = 0;
+        virtual void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a) = 0;
 
-        virtual std::shared_ptr<CommandList> createCommandList(CommandList::CommandListTypes type) = 0;
+        virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListTypes type) = 0;
 
-        virtual void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists) = 0;
+        virtual void executeCommandList(GraphicsCommandList::GraphicsCommandListTypes type, uint32 numLists, GraphicsCommandList* const* lists) = 0;
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsDevice)
 
@@ -36,6 +36,6 @@ namespace Orc
         GraphicsDeviceTypes mGraphicsDeviceType;
 
         friend class Root;
-        friend class CommandList;
+        friend class GraphicsCommandList;
     };
 }

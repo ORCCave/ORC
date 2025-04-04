@@ -1,14 +1,14 @@
 #ifdef ORC_USE_VULKAN
 #include "OrcVulkanPrerequisites.h"
 
-#include "OrcCommandList.h"
+#include "OrcGraphicsCommandList.h"
 
 namespace Orc
 {
-    class VulkanCommandList : public CommandList
+    class VulkanCommandList : public GraphicsCommandList
     {
     public:
-        VulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type)
+        VulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListTypes type)
             : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool)
         {
             vk::CommandBufferAllocateInfo allocInfo{
@@ -40,7 +40,7 @@ namespace Orc
         std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
     };
 
-    std::shared_ptr<CommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type)
+    std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListTypes type)
     {
         return std::make_shared<VulkanCommandList>(device, cmdPool, type);
     }

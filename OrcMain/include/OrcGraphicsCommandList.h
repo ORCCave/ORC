@@ -5,14 +5,14 @@
 namespace Orc
 {
     class GraphicsDevice;
-    class CommandList
+    class GraphicsCommandList
     {
     public:
-        enum class CommandListTypes
+        enum class GraphicsCommandListTypes
         {
-            CLT_GRAPHICS,
-            CLT_COPY,
-            CLT_COMPUTE,
+            GCLT_GRAPHICS,
+            GCLT_COPY,
+            GCLT_COMPUTE,
         };
 
         virtual void begin() = 0;
@@ -20,10 +20,10 @@ namespace Orc
 
         virtual void* getRawCommandList() const = 0;
 
-        ORC_DISABLE_COPY_AND_MOVE(CommandList)
+        ORC_DISABLE_COPY_AND_MOVE(GraphicsCommandList)
     protected:
-        CommandList() = default;
-        virtual ~CommandList() = default;
+        GraphicsCommandList() = default;
+        virtual ~GraphicsCommandList() = default;
 
         void* mInternalCommandPool;
 

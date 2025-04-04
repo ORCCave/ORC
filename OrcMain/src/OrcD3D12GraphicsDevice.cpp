@@ -38,9 +38,9 @@ namespace Orc
 
         ~D3D12GraphicsDevice()
         {
-            _wait(CommandList::CommandListTypes::CLT_GRAPHICS);
-            _wait(CommandList::CommandListTypes::CLT_COPY);
-            _wait(CommandList::CommandListTypes::CLT_COMPUTE);
+            _wait(GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS);
+            _wait(GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY);
+            _wait(GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE);
         }
 
         void* getRawGraphicsDevice() const
@@ -128,16 +128,16 @@ namespace Orc
             mFenceValue[mFrameIndex] = currentFenceValue + 1;
         }
 
-        std::shared_ptr<CommandList> createCommandList(CommandList::CommandListTypes type)
+        std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListTypes type)
         {
             return createD3D12CommandList(this, type);
         }
 
-        void _wait(CommandList::CommandListTypes type)
+        void _wait(GraphicsCommandList::GraphicsCommandListTypes type)
         {
             switch (type)
             {
-            case CommandList::CommandListTypes::CLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
                 CHECK_DX_RESULT(mGraphicsQueue->Signal(mFence.Get(), mFenceValue[mFrameIndex]));
                 CHECK_DX_RESULT(mFence->SetEventOnCompletion(mFenceValue[mFrameIndex]++, mEvent.Get()));
                 if (WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
@@ -145,7 +145,7 @@ namespace Orc
                     throw OrcException("WaitForSingleObjectEx failed");
                 }
                 break;
-            case CommandList::CommandListTypes::CLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
                 mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue);
                 mCopyFence->SetEventOnCompletion(mCopyFenceValue++, mCopyEvent.Get());
                 if (WaitForSingleObjectEx(mCopyEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
@@ -153,7 +153,7 @@ namespace Orc
                     throw OrcException("WaitForSingleObjectEx failed");
                 }
                 break;
-            case CommandList::CommandListTypes::CLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
                 mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue);
                 mComputeFence->SetEventOnCompletion(mComputeFenceValue++, mComputeEvent.Get());
                 if (WaitForSingleObjectEx(mComputeEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
@@ -164,7 +164,7 @@ namespace Orc
             }
         }
 
-        void executeCommandList(CommandList::CommandListTypes type, uint32 numLists, CommandList* const* lists)
+        void executeCommandList(GraphicsCommandList::GraphicsCommandListTypes type, uint32 numLists, GraphicsCommandList* const* lists)
         {
             std::vector<ID3D12CommandList*> tempLists;
             for (uint32 i = 0; i < numLists; ++i)
@@ -175,13 +175,13 @@ namespace Orc
 
             switch (type)
             {
-            case CommandList::CommandListTypes::CLT_GRAPHICS:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_GRAPHICS:
                 mGraphicsQueue->ExecuteCommandLists(numLists, tempLists.data());
                 break;
-            case CommandList::CommandListTypes::CLT_COPY:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COPY:
                 mCopyQueue->ExecuteCommandLists(numLists, tempLists.data());
                 break;
-            case CommandList::CommandListTypes::CLT_COMPUTE:
+            case GraphicsCommandList::GraphicsCommandListTypes::GCLT_COMPUTE:
                 mComputeQueue->ExecuteCommandLists(numLists, tempLists.data());
                 break;
             }
@@ -212,7 +212,7 @@ namespace Orc
             return handle;
         }
 
-        void clearSwapChainColor(CommandList* list, float r, float g, float b, float a)
+        void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a)
         {
             auto rawList = static_cast<ID3D12GraphicsCommandList*>(list->getRawCommandList());
             auto rtvHandle = getCurrentRenderTargetView();

@@ -40,7 +40,7 @@ namespace Orc
     }
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);
-    std::shared_ptr<CommandList> createD3D12CommandList(GraphicsDevice* device, CommandList::CommandListTypes type);
+    std::shared_ptr<GraphicsCommandList> createD3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListTypes type);
 }
 
 #else

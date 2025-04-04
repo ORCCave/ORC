@@ -19,12 +19,10 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "OrcCommandList.h"
-
 namespace Orc
 {
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
-    std::shared_ptr<CommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, CommandList::CommandListTypes type);
+    std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListTypes type);
 }
 #else
 namespace Orc { inline std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height) { return std::shared_ptr<GraphicsDevice>(); } }
