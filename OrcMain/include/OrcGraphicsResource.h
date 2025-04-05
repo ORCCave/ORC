@@ -20,6 +20,13 @@ namespace Orc
             GRS_RENDER_TARGET,
         };
 
+        enum class GraphicsResourceUsage
+        {
+            GRU_DEFAULT = 0,
+            GRU_DYNAMIC,
+            GRU_STAGING,
+        };
+
         virtual GraphicsResourceType getType() const = 0;
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsResource)

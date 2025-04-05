@@ -24,10 +24,7 @@ namespace Orc
     ApplicationContext::ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height)
         : mWindowTitle(windowTitle), mWidth(width), mHeight(height)
     {
-        if (!SDL_Init(SDL_INIT_VIDEO))
-        {
-            throw OrcException(SDL_GetError());
-        }
+        if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
         mWindowHandle = SDL_CreateWindow(mWindowTitle.c_str(), mWidth, mHeight, 0);
         if (!mWindowHandle)
         {

@@ -17,6 +17,7 @@
 #define VK_USE_PLATFORM_XLIB_KHR
 #endif
 
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
 namespace Orc

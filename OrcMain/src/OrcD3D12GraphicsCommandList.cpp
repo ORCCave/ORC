@@ -5,10 +5,10 @@
 
 namespace Orc
 {
-    class D3D12CommandList : public GraphicsCommandList
+    class D3D12GraphicsCommandList : public GraphicsCommandList
     {
     public:
-        D3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListType type)
+        D3D12GraphicsCommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListType type)
         {
             auto d3d12Device = static_cast<ID3D12Device4*>(device->getRawGraphicsDevice());
             D3D12_COMMAND_LIST_TYPE d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -50,7 +50,7 @@ namespace Orc
 
     std::shared_ptr<GraphicsCommandList> createD3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListType type)
     {
-        return std::make_shared<D3D12CommandList>(device, type);
+        return std::make_shared<D3D12GraphicsCommandList>(device, type);
     }
 }
 #endif

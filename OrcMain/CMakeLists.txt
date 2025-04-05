@@ -22,3 +22,7 @@ elseif(UNIX AND NOT APPLE)
     target_link_libraries(OrcMain PRIVATE Vulkan::Vulkan)
     target_compile_definitions(OrcMain PRIVATE -DORC_PLATFORM_LINUX)
 endif()
+
+if(Vulkan_FOUND)
+    target_include_directories(OrcMain PRIVATE "${PROJECT_SOURCE_DIR}/External/VulkanMemoryAllocator/include")
+endif()
