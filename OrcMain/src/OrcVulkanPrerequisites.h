@@ -14,6 +14,7 @@
             #define NOMINMAX
         #endif
     #elif defined(ORC_PLATFORM_LINUX)
+        #include <build_config/SDL_build_config.h>
         #if defined(SDL_VIDEO_DRIVER_WAYLAND)
             #define ORC_USE_WAYLAND
         #elif defined(SDL_VIDEO_DRIVER_X11)
