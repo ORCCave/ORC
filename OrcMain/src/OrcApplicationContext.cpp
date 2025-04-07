@@ -25,7 +25,11 @@ namespace Orc
         : mWindowTitle(windowTitle), mWidth(width), mHeight(height)
     {
         if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
-        mWindowHandle = SDL_CreateWindow(mWindowTitle.c_str(), mWidth, mHeight, 0);
+        SDL_WindowFlags windowFlags = 0;
+#ifdef ORC_PLATFORM_LINUX
+        windowFlags = SDL_WINDOW_VULKAN;
+#endif
+        mWindowHandle = SDL_CreateWindow(mWindowTitle.c_str(), mWidth, mHeight, windowFlags);
         if (!mWindowHandle)
         {
             SDL_Quit();
