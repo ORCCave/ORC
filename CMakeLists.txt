@@ -3,7 +3,7 @@ project(ORC)
 
 set(CMAKE_CXX_STANDARD 23)
 
-if(APPLE OR (NOT WIN32 AND NOT UNIX))
+if(NOT(WIN32 OR (UNIX AND NOT APPLE)))
     message(FATAL_ERROR "Orc does not support this platform")
 endif()
 
