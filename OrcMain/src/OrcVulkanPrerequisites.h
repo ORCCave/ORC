@@ -24,14 +24,14 @@
         #endif
     #endif
 
-#include <vk_mem_alloc.h>
-#include <vulkan/vulkan.hpp>
+    #include <vk_mem_alloc.h>
+    #include <vulkan/vulkan.hpp>
 
-namespace Orc
-{
-    std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
-    std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type);
-}
+    namespace Orc
+    {
+        std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
+        std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type);
+    }
 #else
-namespace Orc { inline std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height) { return std::shared_ptr<GraphicsDevice>(); } }
+    namespace Orc { inline std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height) { return std::shared_ptr<GraphicsDevice>(); } }
 #endif
