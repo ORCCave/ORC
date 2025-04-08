@@ -62,14 +62,11 @@ namespace Orc
             }
             else if (videoDriverType == "x11")
             {
-                if (isExtensionAvailable("VK_KHR_xlib_surface"))
-                {
-                    extensions.emplace_back("VK_KHR_xlib_surface");
-                }
-                else
-                {
-                    throw OrcException("X11 extension not found");
-                }
+                // I add both x11 and xcb extensions.
+                // It seems that SDL does not use xcb.
+                // See: https://github.com/libsdl-org/SDL/pull/7928
+                extensions.emplace_back("VK_KHR_xlib_surface");
+                extensions.emplace_back("VK_KHR_xcb_surface");
             }
             else if (videoDriverType == "wayland")
             {
