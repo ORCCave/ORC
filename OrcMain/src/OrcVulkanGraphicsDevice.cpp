@@ -44,7 +44,7 @@ namespace Orc
             mDevice->waitIdle();
 #ifdef ORC_PLATFORM_LINUX
             SDL_Vulkan_DestroySurface(mInstance.get(),mSurface,nullptr);
-#endif
+#else
             mInstance->destroySurfaceKHR(mSurface);
 #endif
         }
