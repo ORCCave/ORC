@@ -22,7 +22,7 @@ To successfully build this project, ensure the following tools are installed on 
 This project uses CMake’s `FetchContent` module, which relies on Git to automatically download external dependencies (e.g., SDL3). If Git is not installed or not accessible in your system’s PATH, you’ll encounter `error: could not find git for clone of sdl3-populate`.
 
 ### For Linux Users: Install Required Dependencies
-On Linux, For Ubuntu/Debian, install the dependencies with:
+On Linux (Ubuntu/Debian), install the dependencies with:
 
 | Dependency Library               | Installation Command                                                                                                                                |
 |----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
