@@ -39,7 +39,15 @@ namespace Orc
             _createSemaphore();
         }
 
-        ~VulkanGraphicsDevice() { mDevice->waitIdle(); }
+        ~VulkanGraphicsDevice()
+        {
+            mDevice->waitIdle();
+#ifdef ORC_PLATFORM_LINUX
+            SDL_Vulkan_DestroySurface(mInstance.get(),mSurface,nullptr);
+#endif
+            mInstance->destroySurfaceKHR(mSurface);
+#endif
+        }
 
         void _createInstance()
         {
@@ -54,11 +62,7 @@ namespace Orc
             }
             else if (videoDriverType == "x11")
             {
-                if (isExtensionAvailable("VK_KHR_xcb_surface"))
-                {
-                    extensions.emplace_back("VK_KHR_xcb_surface");
-                }
-                else if (isExtensionAvailable("VK_KHR_xlib_surface"))
+                if (isExtensionAvailable("VK_KHR_xlib_surface"))
                 {
                     extensions.emplace_back("VK_KHR_xlib_surface");
                 }
@@ -174,11 +178,11 @@ namespace Orc
             auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
             if (!hwnd) { throw OrcException(SDL_GetError()); }
             vk::Win32SurfaceCreateInfoKHR createInfo({}, reinterpret_cast<HINSTANCE>(instance), reinterpret_cast<HWND>(hwnd));
-            mSurface = mInstance->createWin32SurfaceKHRUnique(createInfo);
+            mSurface = mInstance->createWin32SurfaceKHRcreateInfo);
 #else
             VkSurfaceKHR surface;
             SDL_Vulkan_CreateSurface(window, mInstance.get(), nullptr, &surface);
-            mSurface.reset(surface);
+            mSurface = surface;
 #endif
         }
 
@@ -186,7 +190,7 @@ namespace Orc
         {
             vk::SwapchainCreateInfoKHR createInfo(
                 {},
-                mSurface.get(),
+                mSurface,
                 3,
                 vk::Format::eR8G8B8A8Unorm,
                 vk::ColorSpaceKHR::ePassThroughEXT,
@@ -340,7 +344,7 @@ namespace Orc
         vk::UniqueInstance mInstance;
         vk::PhysicalDevice mPhysicalDevice;
         vk::UniqueDevice mDevice;
-        vk::UniqueSurfaceKHR mSurface;
+        vk::SurfaceKHR mSurface;
         vk::UniqueSwapchainKHR mSwapChain;
         vk::UniqueCommandPool mGraphicsCommandPool;
         vk::UniqueCommandPool mComputeCommandPool;
