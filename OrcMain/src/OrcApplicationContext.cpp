@@ -24,10 +24,17 @@ namespace Orc
     ApplicationContext::ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height)
         : mWindowTitle(windowTitle), mWidth(width), mHeight(height)
     {
-        if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
         SDL_WindowFlags windowFlags = 0;
 #ifdef ORC_PLATFORM_LINUX
+        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
+        if (!SDL_Init(SDL_INIT_VIDEO))
+        {
+            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
+            if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
+        }
         windowFlags = SDL_WINDOW_VULKAN;
+#else
+        if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
 #endif
         mWindowHandle = SDL_CreateWindow(mWindowTitle.c_str(), mWidth, mHeight, windowFlags);
         if (!mWindowHandle)

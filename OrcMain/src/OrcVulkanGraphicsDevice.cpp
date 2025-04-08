@@ -6,17 +6,31 @@
 #include "OrcStdHeaders.h"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 namespace Orc
 {
+    bool isExtensionAvailable(const std::string& extensionName)
+    {
+        std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
+        for (const auto& extension : availableExtensions)
+        {
+            if (extensionName == extension.extensionName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     class VulkanGraphicsDevice : public GraphicsDevice, public Singleton<VulkanGraphicsDevice>
     {
     public:
-        VulkanGraphicsDevice(void* instance, void* windowHandle, uint32 width, uint32 height)
+        VulkanGraphicsDevice(SDL_Window* window, uint32 width, uint32 height)
         {
             _createInstance();
             _createPhysicalDevice();
-            _createSurface(instance, windowHandle);
+            _createSurface(window);
             _createDevice();
             _createSwapChain(width, height);
             _createQueue();
@@ -32,10 +46,31 @@ namespace Orc
             std::vector<const char*> extensions =
             {
                 "VK_KHR_surface",
-#ifdef ORC_PLATFORM_WIN32
-                "VK_KHR_win32_surface"
-#endif
             };
+            std::string videoDriverType = SDL_GetCurrentVideoDriver();
+            if (videoDriverType == "windows")
+            {
+                extensions.emplace_back("VK_KHR_win32_surface");
+            }
+            else if (videoDriverType == "x11")
+            {
+                if (isExtensionAvailable("VK_KHR_xcb_surface"))
+                {
+                    extensions.emplace_back("VK_KHR_xcb_surface");
+                }
+                else if (isExtensionAvailable("VK_KHR_xlib_surface"))
+                {
+                    extensions.emplace_back("VK_KHR_xlib_surface");
+                }
+                else
+                {
+                    throw OrcException("X11 extension not found");
+                }
+            }
+            else if (videoDriverType == "wayland")
+            {
+                extensions.emplace_back("VK_KHR_wayland_surface");
+            }
 
             vk::ApplicationInfo appInfo("ORC", 1, "ORC", 1, VK_API_VERSION_1_3);
             vk::InstanceCreateInfo createInfo(
@@ -52,7 +87,7 @@ namespace Orc
             auto physicalDevices = mInstance->enumeratePhysicalDevices();
             if (physicalDevices.empty())
             {
-                throw OrcException("No physical device found");
+                throw OrcException("Physical device not found");
             }
 
             mPhysicalDevice = physicalDevices[0];
@@ -83,7 +118,7 @@ namespace Orc
 
             mGraphicsFamily = findQueueFamilyEx(vk::QueueFlagBits::eGraphics);
             if (mGraphicsFamily == -1)
-                throw OrcException("No graphics queue family found");
+                throw OrcException("Graphics queue family not found");
 
             mComputeFamily = findQueueFamilyEx(vk::QueueFlagBits::eCompute, { mGraphicsFamily });
             if (mComputeFamily == -1)
@@ -97,7 +132,7 @@ namespace Orc
                 else if (queueFamilies[mComputeFamily].queueFlags & vk::QueueFlagBits::eTransfer)
                     mTransferFamily = mComputeFamily;
                 else
-                    throw OrcException("No transfer queue family found");
+                    throw OrcException("Transfer queue family not found");
             }
 
             float queuePriority = 1.0f;
@@ -129,11 +164,21 @@ namespace Orc
             mDevice = mPhysicalDevice.createDeviceUnique(createInfo);
         }
 
-        void _createSurface(void* hinstance, void* hwnd)
+        void _createSurface(SDL_Window* window)
         {
 #ifdef ORC_PLATFORM_WIN32
-            vk::Win32SurfaceCreateInfoKHR createInfo({}, reinterpret_cast<HINSTANCE>(hinstance), reinterpret_cast<HWND>(hwnd));
+            auto props = SDL_GetWindowProperties(static_cast<SDL_Window*>(window));
+            if (!props) { throw OrcException(SDL_GetError()); }
+            auto instance = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
+            if (!instance) { throw OrcException(SDL_GetError()); }
+            auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+            if (!hwnd) { throw OrcException(SDL_GetError()); }
+            vk::Win32SurfaceCreateInfoKHR createInfo({}, reinterpret_cast<HINSTANCE>(instance), reinterpret_cast<HWND>(hwnd));
             mSurface = mInstance->createWin32SurfaceKHRUnique(createInfo);
+#elif
+            VkSurfaceKHR surface;
+            SDL_Vulkan_CreateSurface(window, mInstance.get(), nullptr, &surface);
+            mSurface.reset(surface);
 #endif
         }
 
@@ -312,13 +357,7 @@ namespace Orc
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
     {
-        auto props = SDL_GetWindowProperties(static_cast<SDL_Window*>(windowHandle));
-        if (!props) { throw OrcException(SDL_GetError()); }
-        auto instance = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
-        if (!instance) { throw OrcException(SDL_GetError()); }
-        auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-        if (!hwnd) { throw OrcException(SDL_GetError()); }
-        return std::make_shared<VulkanGraphicsDevice>(instance, hwnd, width, height);
+        return std::make_shared<VulkanGraphicsDevice>(static_cast<SDL_Window*>(windowHandle), width, height);
     }
 }
 #endif
