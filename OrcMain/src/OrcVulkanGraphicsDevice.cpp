@@ -175,7 +175,7 @@ namespace Orc
             if (!hwnd) { throw OrcException(SDL_GetError()); }
             vk::Win32SurfaceCreateInfoKHR createInfo({}, reinterpret_cast<HINSTANCE>(instance), reinterpret_cast<HWND>(hwnd));
             mSurface = mInstance->createWin32SurfaceKHRUnique(createInfo);
-#elif
+#else
             VkSurfaceKHR surface;
             SDL_Vulkan_CreateSurface(window, mInstance.get(), nullptr, &surface);
             mSurface.reset(surface);
