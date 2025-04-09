@@ -88,6 +88,7 @@ namespace Orc
             _createCommandPool();
             _createCommandBuffer();
             _createSemaphore();
+            _transitionSwapchainForDrawing();
         }
 
         ~VulkanGraphicsDevice()
@@ -163,6 +164,8 @@ namespace Orc
             };
             // Open dynamic rendering
             vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures(true);
+            vk::PhysicalDeviceSynchronization2Features sync2Features(true);
+            dynamicRenderingFeatures.pNext = &sync2Features;
             vk::DeviceCreateInfo createInfo(
                 {},
                 static_cast<uint32>(queueCreateInfos.size()),
@@ -183,8 +186,8 @@ namespace Orc
                 {},
                 mSurfaceAndInstance.mSurface,
                 3,
-                vk::Format::eR8G8B8A8Unorm,
-                vk::ColorSpaceKHR::ePassThroughEXT,
+                vk::Format::eR16G16B16A16Sfloat,
+                vk::ColorSpaceKHR::eExtendedSrgbLinearEXT,
                 vk::Extent2D(w, h),
                 1,
                 vk::ImageUsageFlagBits::eColorAttachment,
@@ -197,6 +200,7 @@ namespace Orc
                 {}
             );
             mSwapChain = mDevice->createSwapchainKHRUnique(createInfo);
+            mSwapchainImages = mDevice->getSwapchainImagesKHR(mSwapChain.get());
         }
 
         void _createQueue()
@@ -229,6 +233,50 @@ namespace Orc
             mTransferCommandBuffer = std::move(transferCommandPools[0]);
         }
 
+        void _transitionSwapchainForDrawing()
+        {
+            vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+            mGraphicsCommandBuffer->begin(beginInfo);
+
+            VkImageMemoryBarrier2 imageBarrier = {};
+            imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+            imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+            imageBarrier.srcAccessMask = 0;
+            imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT; 
+            imageBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT; 
+            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
+            imageBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.image = mSwapchainImages[0];
+            imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBarrier.subresourceRange.baseMipLevel = 0;
+            imageBarrier.subresourceRange.levelCount = 1;
+            imageBarrier.subresourceRange.baseArrayLayer = 0;
+            imageBarrier.subresourceRange.layerCount = 1;
+
+            VkDependencyInfo dependencyInfo = {};
+            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            dependencyInfo.imageMemoryBarrierCount = 1;
+            dependencyInfo.pImageMemoryBarriers = &imageBarrier;
+
+            vkCmdPipelineBarrier2(mGraphicsCommandBuffer.get(), &dependencyInfo);
+
+            mGraphicsCommandBuffer->end();
+
+            //VkSubmitInfo submitInfo = {};
+            //submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            //submitInfo.commandBufferCount = 1;
+            //submitInfo.pCommandBuffers = &commandBuffer;
+            //vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+            //vkQueueWaitIdle(graphicsQueue);
+            vk::SubmitInfo submitInfo;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &(mGraphicsCommandBuffer.get());
+            mGraphicsQueue.submit(submitInfo);
+            mGraphicsQueue.waitIdle();
+        }
+
         void _createSemaphore()
         {
             vk::SemaphoreCreateInfo createInfo;
@@ -238,34 +286,34 @@ namespace Orc
 
         void beginDraw()
         {
-            auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore.get());
-            mFrameIndex = frameIndex.value;
+            //auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore.get());
+            //mFrameIndex = frameIndex.value;
         }
 
         void endDraw()
         {
-            vk::PresentInfoKHR presentInfo{};
-            presentInfo.swapchainCount = 1;
-            auto swapchainHandle = mSwapChain.get();
-            presentInfo.pSwapchains = &swapchainHandle;
-            presentInfo.pImageIndices = &mFrameIndex;
-            vk::Semaphore needSemaphres;
-            if (mHasRenderSubmission)
-            {
-                needSemaphres = mRenderFinishedSemaphore.get();
-            }
-            else
-            {
-                needSemaphres = mImageAvailableSemaphore.get();
-            }
-            presentInfo.waitSemaphoreCount = 1;
-            presentInfo.pWaitSemaphores = &needSemaphres;
+            //vk::PresentInfoKHR presentInfo{};
+            //presentInfo.swapchainCount = 1;
+            //auto swapchainHandle = mSwapChain.get();
+            //presentInfo.pSwapchains = &swapchainHandle;
+            //presentInfo.pImageIndices = &mFrameIndex;
+            //vk::Semaphore needSemaphres;
+            //if (mHasRenderSubmission)
+            //{
+            //    needSemaphres = mRenderFinishedSemaphore.get();
+            //}
+            //else
+            //{
+            //    needSemaphres = mImageAvailableSemaphore.get();
+            //}
+            //presentInfo.waitSemaphoreCount = 1;
+            //presentInfo.pWaitSemaphores = &needSemaphres;
 
-            if (mGraphicsQueue.presentKHR(presentInfo) != vk::Result::eSuccess)
-            {
-                throw OrcException("Failed to present image");
-            }
-            mHasRenderSubmission = false;
+            //if (mGraphicsQueue.presentKHR(presentInfo) != vk::Result::eSuccess)
+            //{
+            //    throw OrcException("Failed to present image");
+            //}
+            //mHasRenderSubmission = false;
         }
 
         void* getRawGraphicsDevice() const
@@ -348,6 +396,8 @@ namespace Orc
         vk::Queue mTransferQueue;
         vk::UniqueSemaphore mImageAvailableSemaphore;
         vk::UniqueSemaphore mRenderFinishedSemaphore;
+
+        std::vector<vk::Image> mSwapchainImages;
     };
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
