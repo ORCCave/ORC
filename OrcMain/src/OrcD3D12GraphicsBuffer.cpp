@@ -9,8 +9,23 @@ namespace Orc
     public:
         D3D12GraphicsBuffer()
         {
-            //D3D12_HEAP_TYPE_UPLOAD
+            
         }
+
+        void* getRawGraphicsResource() const { return mResource.Get(); }
+    private:
+        Microsoft::WRL::ComPtr<ID3D12Resource> mResource;
+    };
+
+    class D3D12GraphicsTexture : public GraphicsTexture
+    {
+	public:
+		D3D12GraphicsTexture()
+		{
+			
+		}
+
+        void* getRawGraphicsResource() const { return mResource.Get(); }
     private:
         Microsoft::WRL::ComPtr<ID3D12Resource> mResource;
     };

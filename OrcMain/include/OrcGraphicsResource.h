@@ -28,12 +28,12 @@ namespace Orc
         };
 
         virtual GraphicsResourceType getType() const = 0;
+        virtual void* getRawGraphicsResource() const = 0;
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsResource)
     protected:
         GraphicsResource() = default;
         virtual ~GraphicsResource() = default;
-
     };
 
     class GraphicsBuffer : public GraphicsResource
@@ -52,7 +52,7 @@ namespace Orc
     public:
         enum class GraphicsTextureFormat
         {
-            GTF_UNDEFINED = 0,
+            GTF_UNDEFINED,
             GTF_R8G8B8A8_UNORM,
         };
 
