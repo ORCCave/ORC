@@ -19,10 +19,7 @@ namespace Orc
         SDL_Window* window = SDL_CreateWindow(title, w, h, flags);
         if (!window)
         {
-            if (SDL_WasInit(SDL_INIT_VIDEO))
-            {
-                SDL_QuitSubSystem(SDL_INIT_VIDEO);
-            }
+            SDL_Quit();
             throw OrcException(SDL_GetError());
         }
         return std::shared_ptr<void>(window, [](void* ptr) {
