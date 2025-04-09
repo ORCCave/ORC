@@ -15,14 +15,14 @@ namespace Orc
 
         enum class GraphicsResourceState
         {
-            GRS_COMMON = 0,
+            GRS_COMMON,
             GRS_PRESENT,
             GRS_RENDER_TARGET,
         };
 
         enum class GraphicsResourceUsage
         {
-            GRU_DEFAULT = 0,
+            GRU_DEFAULT,
             GRU_DYNAMIC,
             GRU_STAGING,
         };
