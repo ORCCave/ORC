@@ -16,10 +16,13 @@ namespace Orc
 
     std::shared_ptr<void> createWindow(const char* title, int w, int h, SDL_WindowFlags flags)
     {
-        SDL_Window* window = SDL_CreateWindow(title, w, h, flags);
-        return std::shared_ptr<void>(window, [](void* ptr) {
-            SDL_DestroyWindow(static_cast<SDL_Window*>(ptr));
-        });
+        return std::shared_ptr<void>(
+            SDL_CreateWindow(title, w, h, flags), 
+            [](void* ptr) 
+            {
+                SDL_DestroyWindow(static_cast<SDL_Window*>(ptr));
+            }
+        );
     }
 
     class ApplicationContext::impl
