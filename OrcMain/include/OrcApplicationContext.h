@@ -20,7 +20,7 @@ namespace Orc
         class impl;
         std::unique_ptr<impl> mpimpl;
 
-        void* mWindowHandle;
+        std::shared_ptr<void> mWindowHandle;
 
         std::string mWindowTitle;
         uint32 mWidth;

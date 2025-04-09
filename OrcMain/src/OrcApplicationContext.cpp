@@ -14,6 +14,22 @@ namespace Orc
         ~InternalRoot() = default;
     };
 
+    std::shared_ptr<void> createWindow(const char* title, int w, int h, SDL_WindowFlags flags)
+    {
+        SDL_Window* window = SDL_CreateWindow(title, w, h, flags);
+        if (!window)
+        {
+            if (SDL_WasInit(SDL_INIT_VIDEO))
+            {
+				SDL_QuitSubSystem(SDL_INIT_VIDEO);
+            }
+            throw OrcException(SDL_GetError());
+        }
+        return std::shared_ptr<void>(window, [](void* ptr) {
+            SDL_DestroyWindow(static_cast<SDL_Window*>(ptr));
+        });
+    }
+
     class ApplicationContext::impl
     {
     public:
@@ -36,19 +52,19 @@ namespace Orc
 #else
         if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
 #endif
-        mWindowHandle = SDL_CreateWindow(mWindowTitle.c_str(), mWidth, mHeight, windowFlags);
+        mWindowHandle = createWindow(mWindowTitle.c_str(), mWidth, mHeight, windowFlags);
         if (!mWindowHandle)
         {
             SDL_Quit();
             throw OrcException(SDL_GetError());
         }
-        mpimpl = std::make_unique<impl>(mWindowHandle, mWidth, mHeight);
+        mpimpl = std::make_unique<impl>(mWindowHandle.get(), mWidth, mHeight);
     }
 
     ApplicationContext::~ApplicationContext()
     {
         mpimpl.reset();
-        SDL_DestroyWindow(static_cast<SDL_Window*>(mWindowHandle));
+        mWindowHandle.reset();
         SDL_Quit();
     }
 
