@@ -21,7 +21,7 @@ namespace Orc
         {
             if (SDL_WasInit(SDL_INIT_VIDEO))
             {
-				SDL_QuitSubSystem(SDL_INIT_VIDEO);
+                SDL_QuitSubSystem(SDL_INIT_VIDEO);
             }
             throw OrcException(SDL_GetError());
         }
