@@ -42,6 +42,10 @@ namespace Orc
                 {
                     extensions.emplace_back("VK_EXT_debug_utils");
                 }
+                else
+                {
+                    layers.clear();
+                }
 #endif
                 extensions.emplace_back("VK_EXT_swapchain_colorspace");
                 vk::InstanceCreateInfo createInfo(
