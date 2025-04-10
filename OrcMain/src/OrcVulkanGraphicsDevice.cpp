@@ -113,6 +113,8 @@ namespace Orc
                     break;
                 }
             }
+            auto pp = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceAndInstance.mSurface);
+            int z = 6;
         }
 
         void _createDevice()
@@ -182,12 +184,13 @@ namespace Orc
 
         void _createSwapChain(uint32 w, uint32 h)
         {
+			auto surfaceFormat = _getSurfaceFormat();
             vk::SwapchainCreateInfoKHR createInfo(
                 {},
                 mSurfaceAndInstance.mSurface,
                 3,
-                vk::Format::eR16G16B16A16Sfloat,
-                vk::ColorSpaceKHR::eExtendedSrgbLinearEXT,
+                surfaceFormat.format,
+                surfaceFormat.colorSpace,
                 vk::Extent2D(w, h),
                 1,
                 vk::ImageUsageFlagBits::eColorAttachment,
@@ -237,42 +240,32 @@ namespace Orc
         {
             vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
             mGraphicsCommandBuffer->begin(beginInfo);
-
-            VkImageMemoryBarrier2 imageBarrier = {};
-            imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-            imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-            imageBarrier.srcAccessMask = 0;
-            imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT; 
-            imageBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT; 
-            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
-            imageBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            imageBarrier.image = mSwapchainImages[0];
-            imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            imageBarrier.subresourceRange.baseMipLevel = 0;
-            imageBarrier.subresourceRange.levelCount = 1;
-            imageBarrier.subresourceRange.baseArrayLayer = 0;
-            imageBarrier.subresourceRange.layerCount = 1;
-
-            VkDependencyInfo dependencyInfo = {};
-            dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-            dependencyInfo.imageMemoryBarrierCount = 1;
-            dependencyInfo.pImageMemoryBarriers = &imageBarrier;
-
-            vkCmdPipelineBarrier2(mGraphicsCommandBuffer.get(), &dependencyInfo);
-
+            for (uint32 i = 0;i < 3; ++i)
+            {
+                VkImageMemoryBarrier2 imageBarrier = {};
+                imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+                imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+                imageBarrier.srcAccessMask = 0;
+                imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+                imageBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageBarrier.image = mSwapchainImages[i];
+                imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                imageBarrier.subresourceRange.baseMipLevel = 0;
+                imageBarrier.subresourceRange.levelCount = 1;
+                imageBarrier.subresourceRange.baseArrayLayer = 0;
+                imageBarrier.subresourceRange.layerCount = 1;
+                VkDependencyInfo dependencyInfo = {};
+                dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+                dependencyInfo.imageMemoryBarrierCount = 1;
+                dependencyInfo.pImageMemoryBarriers = &imageBarrier;
+                vkCmdPipelineBarrier2(mGraphicsCommandBuffer.get(), &dependencyInfo);
+            }
             mGraphicsCommandBuffer->end();
-
-            //VkSubmitInfo submitInfo = {};
-            //submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            //submitInfo.commandBufferCount = 1;
-            //submitInfo.pCommandBuffers = &commandBuffer;
-            //vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-            //vkQueueWaitIdle(graphicsQueue);
-            vk::SubmitInfo submitInfo;
-            submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &(mGraphicsCommandBuffer.get());
+            vk::SubmitInfo submitInfo({}, {}, {}, 1, &mGraphicsCommandBuffer.get());
             mGraphicsQueue.submit(submitInfo);
             mGraphicsQueue.waitIdle();
         }
@@ -370,6 +363,27 @@ namespace Orc
             //vk::ClearColorValue clearColor(r, g, b, a);
 
             //VkPhysicalDeviceVulkan13Features
+        }
+
+        vk::SurfaceFormatKHR _getSurfaceFormat()
+        {
+			auto formats = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceAndInstance.mSurface);
+            if (formats.empty())
+            {
+				throw OrcException("Surface format not found");
+            }
+			for (const auto& format : formats)
+			{
+				if (format.format == vk::Format::eR8G8B8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+				{
+					return format;
+				}
+				else if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+				{
+					return format;
+				}
+			}
+			return formats[0];
         }
 
         int32 mGraphicsFamily = -1;
