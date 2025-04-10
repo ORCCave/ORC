@@ -117,8 +117,6 @@ namespace Orc
                     break;
                 }
             }
-            auto pp = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceAndInstance.mSurface);
-            int z = 6;
         }
 
         void _createDevice()
@@ -156,15 +154,27 @@ namespace Orc
             }
 
             float queuePriority = 1.0f;
-
-            std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos =
+            std::map<uint32, uint32> familyQueueCount;
+            familyQueueCount[mGraphicsFamily] += 1;
+            familyQueueCount[mComputeFamily]  += 1;
+            familyQueueCount[mTransferFamily] += 1;
+            std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+            for (auto& pair : familyQueueCount)
             {
-                vk::DeviceQueueCreateInfo({}, mGraphicsFamily, 1, &queuePriority),
-                vk::DeviceQueueCreateInfo({}, mComputeFamily, 1, &queuePriority),
-                vk::DeviceQueueCreateInfo({}, mTransferFamily, 1, &queuePriority)
-            };
+                auto requestedQueues = pair.second;
+                vk::DeviceQueueCreateInfo queueCreateInfo;
+                queueCreateInfo.queueFamilyIndex = pair.first;
+                auto availableQueues = queueFamilies[pair.first].queueCount;
+                if (requestedQueues > availableQueues)
+                {
+                    requestedQueues = availableQueues;
+                }
+                queueCreateInfo.queueCount = requestedQueues;
+                queueCreateInfo.pQueuePriorities = &queuePriority;
+                queueCreateInfos.push_back(queueCreateInfo);
+            }
 
-            std::vector<const char*> extensions =
+            std::vector<const char*> extensions
             {
                 "VK_KHR_swapchain",
             };
