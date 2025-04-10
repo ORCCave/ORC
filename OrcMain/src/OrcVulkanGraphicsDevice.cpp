@@ -215,7 +215,7 @@ namespace Orc
 
         void _createCommandPool()
         {
-            vk::CommandPoolCreateInfo createInfo({}, mGraphicsFamily);
+            vk::CommandPoolCreateInfo createInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mGraphicsFamily);
             mGraphicsCommandPool = mDevice->createCommandPoolUnique(createInfo);
             createInfo.queueFamilyIndex = mComputeFamily;
             mComputeCommandPool = mDevice->createCommandPoolUnique(createInfo);
