@@ -161,10 +161,10 @@ namespace Orc
             std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
             for (auto& pair : familyQueueCount)
             {
-                auto requestedQueues = pair.second;
                 vk::DeviceQueueCreateInfo queueCreateInfo;
                 queueCreateInfo.queueFamilyIndex = pair.first;
                 auto availableQueues = queueFamilies[pair.first].queueCount;
+                auto requestedQueues = pair.second;
                 if (requestedQueues > availableQueues)
                 {
                     requestedQueues = availableQueues;
@@ -222,9 +222,16 @@ namespace Orc
 
         void _createQueue()
         {
-            mGraphicsQueue = mDevice->getQueue(mGraphicsFamily, 0);
-            mComputeQueue = mDevice->getQueue(mComputeFamily, 0);
-            mTransferQueue = mDevice->getQueue(mTransferFamily, 0);
+            mGraphicsQueue = mDevice->getQueue(mGraphicsFamily, mGraphicsQueueIndex);
+
+            auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
+
+            if (mComputeFamily == mGraphicsFamily && queueFamilies[mComputeFamily].queueCount > 1) { mComputeQueueIndex = 1; }
+            mComputeQueue = mDevice->getQueue(mComputeFamily, mComputeQueueIndex);
+
+            // Avoid repeat
+            mTransferQueueIndex = queueFamilies[mTransferFamily].queueCount - 1;
+            mTransferQueue = mDevice->getQueue(mTransferFamily, mTransferQueueIndex);
         }
 
         void _createCommandPool()
@@ -403,6 +410,9 @@ namespace Orc
         int32 mGraphicsFamily = -1;
         int32 mComputeFamily = -1;
         int32 mTransferFamily = -1;
+        uint32 mGraphicsQueueIndex = 0;
+        uint32 mComputeQueueIndex = 0;
+        uint32 mTransferQueueIndex = 0;
 
         uint32 mFrameIndex = 0;
 
