@@ -198,7 +198,7 @@ namespace Orc
 
         void _createSwapChain(uint32 w, uint32 h)
         {
-			auto surfaceFormat = _getSurfaceFormat();
+            auto surfaceFormat = _getSurfaceFormat();
             vk::SwapchainCreateInfoKHR createInfo(
                 {},
                 mSurfaceAndInstance.mSurface,
@@ -388,23 +388,47 @@ namespace Orc
 
         vk::SurfaceFormatKHR _getSurfaceFormat()
         {
-			auto formats = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceAndInstance.mSurface);
+            auto formats = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceAndInstance.mSurface);
             if (formats.empty())
             {
-				throw OrcException("Surface format not found");
+                throw OrcException("Surface format not found");
             }
-			for (const auto& format : formats)
-			{
-				if (format.format == vk::Format::eR8G8B8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-				{
-					return format;
-				}
-				else if (format.format == vk::Format::eB8G8R8A8Unorm && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-				{
-					return format;
-				}
-			}
-			return formats[0];
+            const std::vector<vk::Format> preferredFormats =
+            {
+                vk::Format::eR8G8B8A8Unorm,
+                vk::Format::eB8G8R8A8Unorm,
+                vk::Format::eR8G8B8A8Srgb,
+                vk::Format::eB8G8R8A8Srgb,
+            };
+
+            for (const auto& pref : preferredFormats)
+            {
+                auto it = std::find_if(formats.begin(), formats.end(),
+                    [pref](const vk::SurfaceFormatKHR& sf)
+                    {
+                        return (sf.format == pref && sf.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear);
+                    }
+                );
+                if (it != formats.end()) {
+                    return *it;
+                }
+            }
+
+            for (const auto& pref : preferredFormats)
+            {
+                auto it = std::find_if(formats.begin(), formats.end(),
+                    [pref](const vk::SurfaceFormatKHR& sf)
+                    {
+                        return (sf.format == pref);
+                    }
+                );
+                if (it != formats.end())
+                {
+                    return *it;
+                }
+            }
+
+            return formats[0];
         }
 
         int32 mGraphicsFamily = -1;
