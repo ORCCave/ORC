@@ -251,21 +251,15 @@ namespace Orc
 
         void _createCommandBuffer()
         {
-            vk::CommandBufferAllocateInfo allocateInfo(mGraphicsCommandPool.get(), vk::CommandBufferLevel::ePrimary, 1);
-            auto graphicsCommandBuffers = mDevice->allocateCommandBuffersUnique(allocateInfo);
-            mGraphicsCommandBuffer = std::move(graphicsCommandBuffers[0]);
-            allocateInfo.commandPool = mComputeCommandPool.get();
-            auto computeCommandBuffers = mDevice->allocateCommandBuffersUnique(allocateInfo);
-            mComputeCommandBuffer = std::move(computeCommandBuffers[0]);
-            allocateInfo.commandPool = mTransferCommandPool.get();
-            auto transferCommandPools = mDevice->allocateCommandBuffersUnique(allocateInfo);
-            mTransferCommandBuffer = std::move(transferCommandPools[0]);
+            mGraphicsList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
+            mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
         }
 
         void _transitionSwapchainForDrawing()
         {
             vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-            mGraphicsCommandBuffer->begin(beginInfo);
+            mGraphicsList->begin();
             for (uint32 i = 0;i < 3; ++i)
             {
                 VkImageMemoryBarrier2 imageBarrier = {};
@@ -288,10 +282,11 @@ namespace Orc
                 dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
                 dependencyInfo.imageMemoryBarrierCount = 1;
                 dependencyInfo.pImageMemoryBarriers = &imageBarrier;
-                vkCmdPipelineBarrier2(mGraphicsCommandBuffer.get(), &dependencyInfo);
+                vkCmdPipelineBarrier2(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()), &dependencyInfo);
             }
-            mGraphicsCommandBuffer->end();
-            vk::SubmitInfo submitInfo({}, {}, {}, 1, &mGraphicsCommandBuffer.get());
+            mGraphicsList->end();
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
+            vk::SubmitInfo submitInfo({}, {}, {}, 1, &commandBuffer);
             mGraphicsQueue.submit(submitInfo);
             mGraphicsQueue.waitIdle();
         }
@@ -457,9 +452,6 @@ namespace Orc
         vk::UniqueCommandPool mGraphicsCommandPool;
         vk::UniqueCommandPool mComputeCommandPool;
         vk::UniqueCommandPool mTransferCommandPool;
-        vk::UniqueCommandBuffer mGraphicsCommandBuffer;
-        vk::UniqueCommandBuffer mComputeCommandBuffer;
-        vk::UniqueCommandBuffer mTransferCommandBuffer;
         vk::Queue mGraphicsQueue;
         vk::Queue mComputeQueue;
         vk::Queue mTransferQueue;
@@ -467,6 +459,10 @@ namespace Orc
         vk::UniqueSemaphore mRenderFinishedSemaphore;
 
         std::vector<vk::Image> mSwapchainImages;
+
+        std::shared_ptr<GraphicsCommandList> mGraphicsList;
+        std::shared_ptr<GraphicsCommandList> mComputeList;
+        std::shared_ptr<GraphicsCommandList> mCopyList;
     };
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
