@@ -172,6 +172,11 @@ namespace Orc
                 queueCreateInfo.queueCount = requestedQueues;
                 queueCreateInfo.pQueuePriorities = &queuePriority;
                 queueCreateInfos.push_back(queueCreateInfo);
+
+                if (pair.first == mTransferFamily)
+                {
+                    mTransferQueueCount = requestedQueues;
+                }
             }
 
             std::vector<const char*> extensions
@@ -230,7 +235,7 @@ namespace Orc
             mComputeQueue = mDevice->getQueue(mComputeFamily, mComputeQueueIndex);
 
             // Avoid repeat
-            mTransferQueueIndex = queueFamilies[mTransferFamily].queueCount - 1;
+            mTransferQueueIndex = mTransferQueueCount - 1;
             mTransferQueue = mDevice->getQueue(mTransferFamily, mTransferQueueIndex);
         }
 
@@ -437,6 +442,8 @@ namespace Orc
         uint32 mGraphicsQueueIndex = 0;
         uint32 mComputeQueueIndex = 0;
         uint32 mTransferQueueIndex = 0;
+
+        uint32 mTransferQueueCount = 0;
 
         uint32 mFrameIndex = 0;
 
