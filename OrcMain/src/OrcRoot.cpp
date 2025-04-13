@@ -35,8 +35,11 @@ namespace Orc
 
             device->beginDraw();
             // todo
-            device->clearSwapChainColor(internalList, 0.0f, 0.0f, 0.0f, 1.0f);
+            internalList->begin();
+            device->clearSwapChainColor(internalList, 0.0f, 1.0f, 0.0f, 1.0f);
+            internalList->end();
 
+            device->executeCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS, 1, &internalList);
             device->endDraw();
         }
     }
