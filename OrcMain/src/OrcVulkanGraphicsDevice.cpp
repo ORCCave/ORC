@@ -276,7 +276,7 @@ namespace Orc
                 imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange{
                     vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1
                 };
-                commandBuffer.pipelineBarrier2(vk::DependencyInfo{{}, {}, {}, imageMemoryBarrier});
+                commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
             }
             mGraphicsList->end();
             mGraphicsQueue.submit(vk::SubmitInfo({}, {}, {}, 1, &commandBuffer));
@@ -310,7 +310,7 @@ namespace Orc
 
             commandBuffer.reset();
             commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse));
-            commandBuffer.pipelineBarrier2(vk::DependencyInfo{ {}, {}, {}, imageMemoryBarrier  });
+            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
         }
 
         void endDraw()
@@ -326,7 +326,7 @@ namespace Orc
             imageMemoryBarrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
             imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
             imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange( vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 );
-            commandBuffer.pipelineBarrier2(vk::DependencyInfo{ {}, {}, {}, imageMemoryBarrier});
+            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
             commandBuffer.end();
             vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
             mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore.get(), &waitStageMask, 1, &commandBuffer, 1, &mRenderFinishedSemaphore.get()));
