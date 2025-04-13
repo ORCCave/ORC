@@ -296,7 +296,6 @@ namespace Orc
 
         void beginDraw()
         {
-            mGraphicsQueue.waitIdle();
             auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore.get());
             mFrameIndex = frameIndex.value;
 
@@ -327,7 +326,6 @@ namespace Orc
             imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
             imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
             imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
-            imageMemoryBarrier.dstAccessMask = {};
             imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
             imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
             imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;

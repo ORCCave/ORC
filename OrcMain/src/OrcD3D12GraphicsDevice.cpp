@@ -190,13 +190,13 @@ namespace Orc
         void _createRTV()
         {
             D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-            rtvHeapDesc.NumDescriptors = 3;
+            rtvHeapDesc.NumDescriptors = ORC_SWAPCHAIN_COUNT;
             rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
             rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
             CHECK_DX_RESULT(mDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&mRtvHeap)));
             D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = mRtvHeap->GetCPUDescriptorHandleForHeapStart();
             mRtvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-            for (uint32 i = 0; i < 3; ++i)
+            for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
             {
                 Microsoft::WRL::ComPtr<ID3D12Resource> renderTarget;
                 CHECK_DX_RESULT(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&renderTarget)));
@@ -233,7 +233,7 @@ namespace Orc
 
         uint32 mFrameIndex = 0;
 
-        uint64 mFenceValue[3]{};
+        uint64 mFenceValue[ORC_SWAPCHAIN_COUNT]{};
         Microsoft::WRL::ComPtr<ID3D12Fence1> mFence;
         Microsoft::WRL::Wrappers::Event mEvent;
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "OrcGraphicsPrerequisites.h"
+
 #include "OrcGraphicsDevice.h"
 #include "OrcStdHeaders.h"
 #include "OrcTypes.h"
@@ -19,6 +21,8 @@
 #endif
 
 #endif
+
+#define ORC_SWAPCHAIN_COUNT 3
 
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
