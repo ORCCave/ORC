@@ -417,10 +417,28 @@ namespace Orc
 
         void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a)
         {
-            //vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
-            //vk::ClearColorValue clearColor(r, g, b, a);
+            vk::ClearColorValue clearColor(r, g, b, a);
+            vk::ImageSubresourceRange subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
+            commandBuffer.clearColorImage(mSwapchainImages[mFrameIndex], vk::ImageLayout::eColorAttachmentOptimal, &clearColor, 1, &subresourceRange);
+        }
 
-            //VkPhysicalDeviceVulkan13Features
+        GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const
+        {
+            GraphicsCommandList* list = nullptr;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                list = mGraphicsList.get();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                list = mCopyList.get();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                list = mComputeList.get();
+                break;
+            }
+            return list;
         }
 
         vk::SurfaceFormatKHR _getSurfaceFormat()

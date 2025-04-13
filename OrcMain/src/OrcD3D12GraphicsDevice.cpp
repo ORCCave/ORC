@@ -34,6 +34,10 @@ namespace Orc
             mComputeEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
 
             _createRTV();
+
+            mGraphicsList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
+            mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
         }
 
         ~D3D12GraphicsDevice()
@@ -220,6 +224,24 @@ namespace Orc
             rawList->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
         }
 
+        GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const
+        {
+            GraphicsCommandList* list = nullptr;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                list = mGraphicsList.get();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                list = mCopyList.get();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                list = mComputeList.get();
+                break;
+            }
+            return list;
+        }
+
     private:
         Microsoft::WRL::ComPtr<IDXGIAdapter4> mAdapter;
         Microsoft::WRL::ComPtr<ID3D12Debug> mDebugController;
@@ -244,6 +266,10 @@ namespace Orc
         Microsoft::WRL::ComPtr<ID3D12Fence1> mComputeFence;
         Microsoft::WRL::Wrappers::Event mComputeEvent;
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
+
+        std::shared_ptr<GraphicsCommandList> mGraphicsList;
+        std::shared_ptr<GraphicsCommandList> mComputeList;
+        std::shared_ptr<GraphicsCommandList> mCopyList;
 
         inline static HMODULE mHD3D12 = NULL;
         inline static HMODULE mHDXGI = NULL;

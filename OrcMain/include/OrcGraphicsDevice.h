@@ -22,6 +22,7 @@ namespace Orc
         virtual void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a) = 0;
 
         virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
+        virtual GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const = 0;
 
         virtual void executeCommandList(GraphicsCommandList::GraphicsCommandListType type, uint32 numLists, GraphicsCommandList* const* lists) = 0;
 
