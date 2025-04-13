@@ -11,7 +11,8 @@ namespace Orc
         VulkanGraphicsCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type)
             : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool)
         {
-            vk::CommandBufferAllocateInfo allocInfo{
+            vk::CommandBufferAllocateInfo allocInfo
+            {
                 mCmdPool,
                 vk::CommandBufferLevel::ePrimary,
                 1

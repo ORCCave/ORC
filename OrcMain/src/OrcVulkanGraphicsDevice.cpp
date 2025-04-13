@@ -258,76 +258,98 @@ namespace Orc
 
         void _transitionSwapchainForDrawing()
         {
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
             vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
             mGraphicsList->begin();
             for (uint32 i = 0;i < 3; ++i)
             {
-                VkImageMemoryBarrier2 imageBarrier = {};
-                imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-                imageBarrier.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-                imageBarrier.srcAccessMask = 0;
-                imageBarrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-                imageBarrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-                imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                imageBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                imageBarrier.image = mSwapchainImages[i];
-                imageBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                imageBarrier.subresourceRange.baseMipLevel = 0;
-                imageBarrier.subresourceRange.levelCount = 1;
-                imageBarrier.subresourceRange.baseArrayLayer = 0;
-                imageBarrier.subresourceRange.layerCount = 1;
-                VkDependencyInfo dependencyInfo = {};
-                dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-                dependencyInfo.imageMemoryBarrierCount = 1;
-                dependencyInfo.pImageMemoryBarriers = &imageBarrier;
-                vkCmdPipelineBarrier2(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()), &dependencyInfo);
+                vk::ImageMemoryBarrier2 imageMemoryBarrier{};
+                imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+                imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
+                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
+                imageMemoryBarrier.dstAccessMask = {};
+                imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
+                imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
+                imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
+                imageMemoryBarrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
+                imageMemoryBarrier.image = mSwapchainImages[i];
+                imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange{
+                    vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1
+                };
+                commandBuffer.pipelineBarrier2(
+                    vk::DependencyInfo
+                    {
+                        {}, {}, {}, {imageMemoryBarrier}
+                    }
+                );
             }
             mGraphicsList->end();
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
-            vk::SubmitInfo submitInfo({}, {}, {}, 1, &commandBuffer);
-            mGraphicsQueue.submit(submitInfo);
+            mGraphicsQueue.submit(vk::SubmitInfo({}, {}, {}, 1, &commandBuffer));
             mGraphicsQueue.waitIdle();
         }
 
         void _createSemaphore()
         {
-            vk::SemaphoreCreateInfo createInfo;
-            mImageAvailableSemaphore = mDevice->createSemaphoreUnique(createInfo);
-            mRenderFinishedSemaphore = mDevice->createSemaphoreUnique(createInfo);
+            mImageAvailableSemaphore = mDevice->createSemaphoreUnique({});
+            mRenderFinishedSemaphore = mDevice->createSemaphoreUnique({});
         }
 
         void beginDraw()
         {
-            //auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore.get());
-            //mFrameIndex = frameIndex.value;
+            mGraphicsQueue.waitIdle();
+            auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore.get());
+            mFrameIndex = frameIndex.value;
+
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
+            vk::ImageMemoryBarrier2 imageMemoryBarrier{};
+            imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTopOfPipe;
+            imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+            imageMemoryBarrier.srcAccessMask = {};
+            imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
+            imageMemoryBarrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
+            imageMemoryBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
+            imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
+            imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange{
+                vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1
+            };
+
+            commandBuffer.reset();
+            commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse));
+            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, { imageMemoryBarrier }));
         }
 
         void endDraw()
         {
-            //vk::PresentInfoKHR presentInfo{};
-            //presentInfo.swapchainCount = 1;
-            //auto swapchainHandle = mSwapChain.get();
-            //presentInfo.pSwapchains = &swapchainHandle;
-            //presentInfo.pImageIndices = &mFrameIndex;
-            //vk::Semaphore needSemaphres;
-            //if (mHasRenderSubmission)
-            //{
-            //    needSemaphres = mRenderFinishedSemaphore.get();
-            //}
-            //else
-            //{
-            //    needSemaphres = mImageAvailableSemaphore.get();
-            //}
-            //presentInfo.waitSemaphoreCount = 1;
-            //presentInfo.pWaitSemaphores = &needSemaphres;
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
+            vk::ImageMemoryBarrier2 imageMemoryBarrier{};
+            imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+            imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
+            imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
+            imageMemoryBarrier.dstAccessMask = {};
+            imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+            imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
+            imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
+            imageMemoryBarrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
+            imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
+            imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange( vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 );
+            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {imageMemoryBarrier}));
+            commandBuffer.end();
+            vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+            mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore.get(), &waitStageMask, 1, &commandBuffer, 1, &mRenderFinishedSemaphore.get()));
 
-            //if (mGraphicsQueue.presentKHR(presentInfo) != vk::Result::eSuccess)
-            //{
-            //    throw OrcException("Failed to present image");
-            //}
-            //mHasRenderSubmission = false;
+            vk::PresentInfoKHR presentInfo{};
+            presentInfo.swapchainCount = 1;
+            presentInfo.pSwapchains = &mSwapChain.get();
+            presentInfo.pImageIndices = &mFrameIndex;
+            presentInfo.waitSemaphoreCount = 1;
+            presentInfo.pWaitSemaphores = &mRenderFinishedSemaphore.get();
+
+            if (mGraphicsQueue.presentKHR(presentInfo) != vk::Result::eSuccess)
+            {
+                throw OrcException("Failed to present image");
+            }
         }
 
         void* getRawGraphicsDevice() const
@@ -441,8 +463,6 @@ namespace Orc
         uint32 mTransferQueueCount = 0;
 
         uint32 mFrameIndex = 0;
-
-        bool mHasRenderSubmission = false;
 
         VulkanSurfaceAndInstanceWrapper mSurfaceAndInstance;
 
