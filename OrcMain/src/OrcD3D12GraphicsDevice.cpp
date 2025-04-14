@@ -35,7 +35,10 @@ namespace Orc
 
             _createRTV();
 
-            mGraphicsList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            for (uint32 i = 0;i < ORC_SWAPCHAIN_COUNT; ++i)
+            {
+                mGraphicsList[i] = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            }
             mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
             mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
         }
@@ -112,13 +115,13 @@ namespace Orc
 
         void beginDraw()
         {
-            mGraphicsList->begin();
+            mGraphicsList[mFrameIndex]->begin();
         }
 
         void endDraw()
         {
-            mGraphicsList->end();
-            auto tempPtr = mGraphicsList.get();
+            mGraphicsList[mFrameIndex]->end();
+            auto tempPtr = mGraphicsList[mFrameIndex].get();
             executeCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS, 1, &tempPtr);
             CHECK_DX_RESULT(mSwapChain->Present(1, 0));
             moveToNextFrame();
@@ -228,7 +231,7 @@ namespace Orc
         {
             auto rtvHandle = getCurrentRenderTargetView();
             float colorRGBA[4] = { r, g, b, a };
-            static_cast<ID3D12GraphicsCommandList*>(mGraphicsList->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
+            static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
         }
 
         GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const
@@ -237,7 +240,7 @@ namespace Orc
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                list = mGraphicsList.get();
+                list = mGraphicsList[mFrameIndex].get();
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 list = mCopyList.get();
@@ -274,7 +277,7 @@ namespace Orc
         Microsoft::WRL::Wrappers::Event mComputeEvent;
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 
-        std::shared_ptr<GraphicsCommandList> mGraphicsList;
+        std::shared_ptr<GraphicsCommandList> mGraphicsList[ORC_SWAPCHAIN_COUNT];
         std::shared_ptr<GraphicsCommandList> mComputeList;
         std::shared_ptr<GraphicsCommandList> mCopyList;
 
