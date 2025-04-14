@@ -110,8 +110,16 @@ namespace Orc
             CHECK_DX_RESULT(swapChain.As(&mSwapChain));
         }
 
+        void beginDraw()
+        {
+            mGraphicsList->begin();
+        }
+
         void endDraw()
         {
+            mGraphicsList->end();
+            auto tempPtr = mGraphicsList.get();
+            executeCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS, 1, &tempPtr);
             CHECK_DX_RESULT(mSwapChain->Present(1, 0));
             moveToNextFrame();
         }
@@ -216,12 +224,11 @@ namespace Orc
             return handle;
         }
 
-        void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a)
+        void clearSwapChainColor(float r, float g, float b, float a)
         {
-            auto rawList = static_cast<ID3D12GraphicsCommandList*>(list->getRawCommandList());
             auto rtvHandle = getCurrentRenderTargetView();
             float colorRGBA[4] = { r, g, b, a };
-            rawList->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
+            static_cast<ID3D12GraphicsCommandList*>(mGraphicsList->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
         }
 
         GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const

@@ -314,7 +314,6 @@ namespace Orc
             auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore[mCurrentIndex].get());
             mFrameIndex = frameIndex.value;
 
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
             vk::ImageMemoryBarrier2 imageMemoryBarrier{};
             imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTopOfPipe;
             imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
@@ -326,8 +325,8 @@ namespace Orc
             imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
             imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
 
-            commandBuffer.reset();
-            commandBuffer.begin(vk::CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse));
+            mGraphicsList->begin();
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
             commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
         }
 
@@ -345,7 +344,7 @@ namespace Orc
             imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
             imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange( vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 );
             commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
-            commandBuffer.end();
+            mGraphicsList->end();
 
             vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
             mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore[mCurrentIndex].get(), &waitStageMask, 1, &commandBuffer, 1, &mRenderFinishedSemaphore[mCurrentIndex].get()), 
@@ -415,11 +414,11 @@ namespace Orc
             }
         }
 
-        void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a)
+        void clearSwapChainColor(float r, float g, float b, float a)
         {
             vk::ClearColorValue clearColor(r, g, b, a);
             vk::ImageSubresourceRange subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
             commandBuffer.clearColorImage(mSwapchainImages[mFrameIndex], vk::ImageLayout::eColorAttachmentOptimal, &clearColor, 1, &subresourceRange);
         }
 

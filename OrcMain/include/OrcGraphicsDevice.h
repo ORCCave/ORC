@@ -19,7 +19,7 @@ namespace Orc
         };
 
         virtual void* getRawGraphicsDevice() const = 0;
-        virtual void clearSwapChainColor(GraphicsCommandList* list, float r, float g, float b, float a) = 0;
+        virtual void clearSwapChainColor(float r, float g, float b, float a) = 0;
 
         virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
         virtual GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const = 0;
@@ -32,7 +32,7 @@ namespace Orc
         GraphicsDevice() {}
         virtual ~GraphicsDevice() = default;
 
-        virtual void beginDraw() {}
+        virtual void beginDraw() = 0;
         virtual void endDraw() = 0;
 
         friend class Root;
