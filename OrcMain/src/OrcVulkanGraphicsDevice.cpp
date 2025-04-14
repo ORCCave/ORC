@@ -249,7 +249,11 @@ namespace Orc
 
         void _createCommandBuffer()
         {
-            mGraphicsList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
+            {
+                mGraphicsList[i] = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            }
+
             mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
             mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
         }
@@ -259,19 +263,14 @@ namespace Orc
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
             {
                 mMainFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-                // Fix first call bug.
-                if (i != ORC_SWAPCHAIN_COUNT - 1)
-                {
-                    mDevice->resetFences(mMainFence[i].get());
-                }
             }
         }
 
         void _transitionSwapchainForDrawing()
         {
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[0]->getRawCommandList()));
             vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-            mGraphicsList->begin();
+            mGraphicsList[0]->begin();
             for (uint32 i = 0;i < 3; ++i)
             {
                 vk::ImageMemoryBarrier2 imageMemoryBarrier{};
@@ -287,7 +286,7 @@ namespace Orc
                 imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
                 commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
             }
-            mGraphicsList->end();
+            mGraphicsList[0]->end();
             mGraphicsQueue.submit(vk::SubmitInfo({}, {}, {}, 1, &commandBuffer));
             mGraphicsQueue.waitIdle();
         }
@@ -303,14 +302,8 @@ namespace Orc
 
         void beginDraw()
         {
-            if (auto result = mDevice->getFenceStatus(mMainFence[mLastCurrentIndex].get()); result == vk::Result::eNotReady)
-            {
-                mDevice->waitForFences(mMainFence[mLastCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64>::max());
-            }
-            else if (result != vk::Result::eSuccess) { throw OrcException("Failed to get fence status"); }
-
-            mDevice->resetFences(mMainFence[mLastCurrentIndex].get());
-
+            mDevice->waitForFences(1, &mMainFence[mCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64_t>::max());
+            mDevice->resetFences(1, &mMainFence[mCurrentIndex].get());
             auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore[mCurrentIndex].get());
             mFrameIndex = frameIndex.value;
 
@@ -325,14 +318,14 @@ namespace Orc
             imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
             imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
 
-            mGraphicsList->begin();
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
+            mGraphicsList[mCurrentIndex]->begin();
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
             commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
         }
 
         void endDraw()
         {
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
             vk::ImageMemoryBarrier2 imageMemoryBarrier{};
             imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
             imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
@@ -344,7 +337,7 @@ namespace Orc
             imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
             imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange( vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 );
             commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
-            mGraphicsList->end();
+            mGraphicsList[mCurrentIndex]->end();
 
             vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
             mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore[mCurrentIndex].get(), &waitStageMask, 1, &commandBuffer, 1, &mRenderFinishedSemaphore[mCurrentIndex].get()), 
@@ -362,7 +355,11 @@ namespace Orc
                 throw OrcException("Failed to present image");
             }
 
-            mLastCurrentIndex = mCurrentIndex;
+            moveToNextFrame();
+        }
+
+        void moveToNextFrame()
+        {
             mCurrentIndex = (mCurrentIndex + 1) % ORC_SWAPCHAIN_COUNT;
         }
 
@@ -418,7 +415,7 @@ namespace Orc
         {
             vk::ClearColorValue clearColor(r, g, b, a);
             vk::ImageSubresourceRange subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList->getRawCommandList()));
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
             commandBuffer.clearColorImage(mSwapchainImages[mFrameIndex], vk::ImageLayout::eColorAttachmentOptimal, &clearColor, 1, &subresourceRange);
         }
 
@@ -428,7 +425,7 @@ namespace Orc
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                list = mGraphicsList.get();
+                list = mGraphicsList[mCurrentIndex].get();
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 list = mCopyList.get();
@@ -496,7 +493,6 @@ namespace Orc
 
         uint32 mFrameIndex = 0;
         uint32 mCurrentIndex = 0;
-        uint32 mLastCurrentIndex = ORC_SWAPCHAIN_COUNT - 1;
 
         VulkanSurfaceAndInstanceWrapper mSurfaceAndInstance;
 
@@ -515,7 +511,7 @@ namespace Orc
 
         std::vector<vk::Image> mSwapchainImages;
 
-        std::shared_ptr<GraphicsCommandList> mGraphicsList;
+        std::shared_ptr<GraphicsCommandList> mGraphicsList[ORC_SWAPCHAIN_COUNT];
         std::shared_ptr<GraphicsCommandList> mComputeList;
         std::shared_ptr<GraphicsCommandList> mCopyList;
     };

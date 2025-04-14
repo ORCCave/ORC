@@ -33,7 +33,7 @@ namespace Orc
                 break;
             device->beginDraw();
             // todo
-            device->clearSwapChainColor(0.0f, 1.0f, 0.0f, 1.0f);
+            //device->clearSwapChainColor(0.0f, 1.0f, 0.0f, 1.0f);
 
             device->endDraw();
         }
