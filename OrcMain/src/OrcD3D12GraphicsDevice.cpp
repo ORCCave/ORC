@@ -1,12 +1,11 @@
 #ifdef ORC_PLATFORM_WIN32
 #include "OrcD3D12Prerequisites.h"
-#include "OrcSingleton.h"
 
 #include <SDL3/SDL.h>
 
 namespace Orc
 {
-    class D3D12GraphicsDevice : public GraphicsDevice, public Singleton<D3D12GraphicsDevice>
+    class D3D12GraphicsDevice : public GraphicsDevice
     {
     public:
         D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height)
@@ -232,24 +231,6 @@ namespace Orc
             auto rtvHandle = getCurrentRenderTargetView();
             float colorRGBA[4] = { r, g, b, a };
             static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
-        }
-
-        GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const
-        {
-            GraphicsCommandList* list = nullptr;
-            switch (type)
-            {
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                list = mGraphicsList[mFrameIndex].get();
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                list = mCopyList.get();
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                list = mComputeList.get();
-                break;
-            }
-            return list;
         }
 
     private:

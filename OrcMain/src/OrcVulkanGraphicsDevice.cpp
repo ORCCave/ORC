@@ -2,7 +2,6 @@
 #include "OrcVulkanPrerequisites.h"
 
 #include "OrcException.h"
-#include "OrcSingleton.h"
 #include "OrcStdHeaders.h"
 
 #include <SDL3/SDL.h>
@@ -23,7 +22,7 @@ namespace Orc
             });
     }
 
-    class VulkanGraphicsDevice : public GraphicsDevice, public Singleton<VulkanGraphicsDevice>
+    class VulkanGraphicsDevice : public GraphicsDevice
     {
         struct VulkanSurfaceAndInstanceWrapper
         {
@@ -417,24 +416,6 @@ namespace Orc
             vk::ImageSubresourceRange subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
             commandBuffer.clearColorImage(mSwapchainImages[mFrameIndex], vk::ImageLayout::eColorAttachmentOptimal, &clearColor, 1, &subresourceRange);
-        }
-
-        GraphicsCommandList* getInternalCommandList(GraphicsCommandList::GraphicsCommandListType type) const
-        {
-            GraphicsCommandList* list = nullptr;
-            switch (type)
-            {
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                list = mGraphicsList[mCurrentIndex].get();
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                list = mCopyList.get();
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                list = mComputeList.get();
-                break;
-            }
-            return list;
         }
 
         vk::SurfaceFormatKHR _getSurfaceFormat()

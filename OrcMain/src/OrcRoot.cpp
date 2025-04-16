@@ -1,16 +1,25 @@
 #include "OrcException.h"
 #include "OrcGraphicsFactory.h"
 #include "OrcRoot.h"
+#include "OrcStdHeaders.h"
 
 #include <SDL3/SDL_events.h>
 
 namespace Orc
 {
-    std::shared_ptr<GraphicsDevice> Root::createGraphicsDevice(GraphicsDevice::GraphicsDeviceType type)
+    GraphicsDevice* Root::getGraphicsDevice(GraphicsDevice::GraphicsDeviceType type)
     {
-        if (auto device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type))
-            return device;
-        throw OrcException("Invalid GraphicsDeviceType");
+        static std::map<GraphicsDevice::GraphicsDeviceType, std::shared_ptr<GraphicsDevice>> deviceCache;
+
+        auto it = deviceCache.find(type);
+        if (it != deviceCache.end())
+        {
+            return it->second.get();
+        }
+
+        auto device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type);
+        deviceCache[type] = device;
+        return device.get();
     }
 
     void Root::startRendering(GraphicsDevice* device)
