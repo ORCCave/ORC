@@ -123,6 +123,8 @@ namespace Orc
         void beginDraw()
         {
             mGraphicsList[mFrameIndex]->begin();
+
+            clearSwapChainColor(1, 1, 1, 1);
         }
 
         void endDraw()
@@ -224,6 +226,8 @@ namespace Orc
                 CHECK_DX_RESULT(mSwapChain->GetBuffer(i, IID_PPV_ARGS(&renderTarget)));
                 mDevice->CreateRenderTargetView(renderTarget.Get(), nullptr, rtvHandle);
                 rtvHandle.ptr += mRtvDescriptorSize;
+
+                mSwapChainRes.emplace_back(renderTarget);
             }
         }
 
@@ -277,6 +281,8 @@ namespace Orc
 
         UINT mRtvDescriptorSize;
         bool mEnhancedBarriersSupported;
+
+        std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> mSwapChainRes;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)

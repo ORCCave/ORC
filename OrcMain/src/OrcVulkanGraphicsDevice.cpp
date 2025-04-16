@@ -328,8 +328,6 @@ namespace Orc
 
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
 
-            _barrier(commandBuffer);
-
             vk::RenderingAttachmentInfo colorAttachment(mSwapChainViews[mFrameIndex].get(), vk::ImageLayout::eAttachmentOptimal);
             colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
             colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f));
@@ -368,45 +366,6 @@ namespace Orc
             }
 
             mCurrentIndex = (mCurrentIndex + 1) % ORC_SWAPCHAIN_COUNT;
-        }
-
-        void _barrier(vk::CommandBuffer commandBuffer)
-        {
-            vk::ImageMemoryBarrier2 imageMemoryBarrier{};
-            imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTopOfPipe;
-            imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-            imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
-            imageMemoryBarrier.oldLayout = vk::ImageLayout::ePresentSrcKHR;
-            imageMemoryBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-            imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
-            imageMemoryBarrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
-            imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
-            imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
-
-            imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
-            imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-            imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-            imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
-            imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
-            imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits2::eNone;
-            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
-        }
-
-        void _barrierToPresentSrcKHR(vk::CommandBuffer commandBuffer)
-        {
-            vk::ImageMemoryBarrier2 imageMemoryBarrier{};
-            imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-            imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
-            imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
-            imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits2::eNone;
-            imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
-            imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-            imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
-            imageMemoryBarrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
-            imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
-            imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
         }
 
         void* getRawGraphicsDevice() const
