@@ -8,7 +8,7 @@ int main()
     try
     {
         Orc::ApplicationContext ctx("OrcWindow", 800, 600);
-        Orc::Root* root = ctx.getRoot();
+        auto* root = ctx.getRoot();
         auto device = root->getGraphicsDevice(Orc::GraphicsDevice::GraphicsDeviceType::GDT_VULKAN);
         root->startRendering(device);
     }
