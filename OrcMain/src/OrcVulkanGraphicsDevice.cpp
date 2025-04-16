@@ -95,6 +95,7 @@ namespace Orc
             _createSemaphore();
             _createFence();
             _transitionSwapchainForDrawing();
+            _createView();
         }
 
         ~VulkanGraphicsDevice()
@@ -313,7 +314,7 @@ namespace Orc
                 createInfo.subresourceRange.levelCount = 1;
                 createInfo.subresourceRange.baseArrayLayer = 0;
                 createInfo.subresourceRange.layerCount = 1;
-                mSwapChainViews[i] = mDevice->createImageView(createInfo);
+                mSwapChainViews[i] = mDevice->createImageViewUnique(createInfo);
             }
         }
 
@@ -329,7 +330,7 @@ namespace Orc
 
             _barrier(commandBuffer);
 
-            vk::RenderingAttachmentInfo colorAttachment(mSwapChainViews[mFrameIndex], vk::ImageLayout::eAttachmentOptimal);
+            vk::RenderingAttachmentInfo colorAttachment(mSwapChainViews[mFrameIndex].get(), vk::ImageLayout::eAttachmentOptimal);
             colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
             colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -389,6 +390,22 @@ namespace Orc
             imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
             imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
             imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits2::eNone;
+            commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
+        }
+
+        void _barrierToPresentSrcKHR(vk::CommandBuffer commandBuffer)
+        {
+            vk::ImageMemoryBarrier2 imageMemoryBarrier{};
+            imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+            imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
+            imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
+            imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits2::eNone;
+            imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+            imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
+            imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
+            imageMemoryBarrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
+            imageMemoryBarrier.image = mSwapchainImages[mFrameIndex];
+            imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
             commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
         }
 
@@ -531,7 +548,7 @@ namespace Orc
         std::shared_ptr<GraphicsCommandList> mCopyList;
 
         vk::Format mSwapChainFormat = vk::Format::eUndefined;
-        vk::ImageView mSwapChainViews[ORC_SWAPCHAIN_COUNT]{};
+        vk::UniqueImageView mSwapChainViews[ORC_SWAPCHAIN_COUNT]{};
 
         uint32 mWidth;
         uint32 mHeight;
