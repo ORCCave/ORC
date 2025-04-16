@@ -40,6 +40,14 @@ namespace Orc
             }
             mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
             mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
+
+            D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
+            mEnhancedBarriersSupported = false;
+            if (SUCCEEDED(mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12))))
+            {
+                mEnhancedBarriersSupported = options12.EnhancedBarriersSupported;
+            }
+
         }
 
         ~D3D12GraphicsDevice()
@@ -268,6 +276,7 @@ namespace Orc
         inline static HMODULE mHDXGIDebug = NULL;
 
         UINT mRtvDescriptorSize;
+        bool mEnhancedBarriersSupported;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
