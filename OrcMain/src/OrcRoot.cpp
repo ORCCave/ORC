@@ -1,4 +1,3 @@
-#include "OrcException.h"
 #include "OrcGraphicsFactory.h"
 #include "OrcRoot.h"
 #include "OrcStdHeaders.h"
@@ -9,16 +8,14 @@ namespace Orc
 {
     GraphicsDevice* Root::getGraphicsDevice(GraphicsDevice::GraphicsDeviceType type)
     {
-        static std::map<GraphicsDevice::GraphicsDeviceType, std::shared_ptr<GraphicsDevice>> deviceCache;
-
-        auto it = deviceCache.find(type);
-        if (it != deviceCache.end())
+        auto it = mDeviceCache.find(type);
+        if (it != mDeviceCache.end())
         {
             return it->second.get();
         }
 
         auto device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type);
-        deviceCache[type] = device;
+        mDeviceCache[type] = device;
         return device.get();
     }
 

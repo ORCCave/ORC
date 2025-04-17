@@ -2,6 +2,7 @@
 
 #include "OrcDefines.h"
 #include "OrcGraphicsDevice.h"
+#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
 namespace Orc
@@ -24,6 +25,8 @@ namespace Orc
 
         uint32 mWidthForSwapChain;
         uint32 mHeightForSwapChain;
+
+        std::map<GraphicsDevice::GraphicsDeviceType, std::shared_ptr<GraphicsDevice>> mDeviceCache;
 
         friend class ApplicationContext;
     };
