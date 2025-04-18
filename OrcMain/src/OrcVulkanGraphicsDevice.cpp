@@ -320,9 +320,19 @@ namespace Orc
 
         void beginDraw()
         {
-            mDevice->waitForFences(1, &mMainFence[mCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64_t>::max());
-            mDevice->resetFences(1, &mMainFence[mCurrentIndex].get());
+            if(mDevice->waitForFences(1, &mMainFence[mCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
+            {
+                throw OrcException("Failed to wait for fences");
+            }
+            if (mDevice->resetFences(1, &mMainFence[mCurrentIndex].get()) != vk::Result::eSuccess)
+            {
+                throw OrcException("Failed to reset fences");
+            }
             auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore[mCurrentIndex].get());
+            if (frameIndex.result != vk::Result::eSuccess)
+            {
+                throw OrcException("Failed to acquire next image");
+            }
             mFrameIndex = frameIndex.value;
             mGraphicsList[mCurrentIndex]->begin();
 
