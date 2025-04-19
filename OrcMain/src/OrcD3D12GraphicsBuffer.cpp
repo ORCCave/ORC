@@ -19,11 +19,11 @@ namespace Orc
 
     class D3D12GraphicsTexture : public GraphicsTexture
     {
-	public:
-		D3D12GraphicsTexture()
-		{
-			
-		}
+    public:
+        D3D12GraphicsTexture()
+        {
+            
+        }
 
         void* getRawGraphicsResource() const { return mResource.Get(); }
     private:
