@@ -517,7 +517,7 @@ namespace Orc
         std::shared_ptr<GraphicsCommandList> mCopyList;
 
         vk::Format mSwapChainFormat = vk::Format::eUndefined;
-        vk::UniqueImageView mSwapChainViews[ORC_SWAPCHAIN_COUNT]{};
+        vk::UniqueImageView mSwapChainViews[ORC_SWAPCHAIN_COUNT];
 
         uint32 mWidth;
         uint32 mHeight;
