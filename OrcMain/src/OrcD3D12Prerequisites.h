@@ -29,20 +29,14 @@
 #include <wrl/client.h>
 #include <wrl/wrappers/corewrappers.h>
 
-#endif
-
 //------------------------------------------------------------------------------
-// Standard Library and Project Prerequisites
+// Project Prerequisites
 //------------------------------------------------------------------------------
-#include "OrcGraphicsPrerequisites.h"
-
+#include "OrcException.h"
 #include "OrcGraphicsDevice.h"
+#include "OrcGraphicsPrerequisites.h"
 #include "OrcStdHeaders.h"
 #include "OrcTypes.h"
-
-#ifdef ORC_PLATFORM_WIN32
-
-#include "OrcException.h"
 
 namespace Orc
 {
@@ -63,6 +57,4 @@ namespace Orc
     std::shared_ptr<GraphicsCommandList> createD3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListType type);
 }
 
-#else
-namespace Orc { inline std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height) { return nullptr; } }
 #endif
