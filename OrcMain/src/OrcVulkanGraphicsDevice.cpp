@@ -276,9 +276,8 @@ namespace Orc
             for (uint32 i = 0;i < 3; ++i)
             {
                 vk::ImageMemoryBarrier2 imageMemoryBarrier{};
-                imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+                imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTopOfPipe;
                 imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
-                imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite;
                 imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
                 imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
                 imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
