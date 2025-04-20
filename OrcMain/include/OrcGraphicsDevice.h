@@ -33,8 +33,6 @@ namespace Orc
         virtual void beginDraw() = 0;
         virtual void endDraw() = 0;
 
-        virtual void clearSwapChainColor(float r, float g, float b, float a) = 0;
-
         friend class Root;
         friend class GraphicsCommandList;
     };

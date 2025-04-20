@@ -340,7 +340,7 @@ namespace Orc
 
             vk::RenderingAttachmentInfo colorAttachment(mSwapChainViews[mFrameIndex].get(), vk::ImageLayout::eAttachmentOptimal);
             colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-            colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f));
+            colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
 
             vk::RenderingInfo renderingInfo{};
             renderingInfo.renderArea = vk::Rect2D({ 0, 0 }, { mWidth, mHeight });
@@ -424,14 +424,6 @@ namespace Orc
                 mComputeQueue.submit(submitInfo);
                 break;
             }
-        }
-
-        void clearSwapChainColor(float r, float g, float b, float a)
-        {
-            //vk::ClearColorValue clearColor(r, g, b, a);
-            //vk::ImageSubresourceRange subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
-            //vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
-            //commandBuffer.clearColorImage(mSwapchainImages[mFrameIndex], vk::ImageLayout::eColorAttachmentOptimal, &clearColor, 1, &subresourceRange);
         }
 
         vk::SurfaceFormatKHR _getSurfaceFormat()

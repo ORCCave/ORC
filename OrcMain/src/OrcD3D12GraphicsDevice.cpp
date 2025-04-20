@@ -124,11 +124,55 @@ namespace Orc
         {
             mGraphicsList[mFrameIndex]->begin();
 
-            clearSwapChainColor(1, 1, 1, 1);
+            if (mEnhancedBarriersSupported)
+            {
+                CD3DX12_TEXTURE_BARRIER swapchainBarrier(
+                    D3D12_BARRIER_SYNC_NONE,
+                    D3D12_BARRIER_SYNC_RENDER_TARGET,
+                    D3D12_BARRIER_ACCESS_NO_ACCESS,
+                    D3D12_BARRIER_ACCESS_RENDER_TARGET,
+                    D3D12_BARRIER_LAYOUT_PRESENT,
+                    D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+                    mSwapChainRes[mFrameIndex].Get(),
+                    CD3DX12_BARRIER_SUBRESOURCE_RANGE(0xffffffff),
+                    D3D12_TEXTURE_BARRIER_FLAG_NONE
+                );
+                CD3DX12_BARRIER_GROUP group(1, &swapchainBarrier);
+                static_cast<ID3D12GraphicsCommandList7*>(mGraphicsList[mFrameIndex]->getRawCommandList())->Barrier(1, &group);
+            }
+            else
+            {
+                auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mSwapChainRes[mFrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+                static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ResourceBarrier(1, &barrier);
+            }
+
+            clearSwapChainColor(0, 0, 0, 1);
         }
 
         void endDraw()
         {
+            if (mEnhancedBarriersSupported)
+            {
+                CD3DX12_TEXTURE_BARRIER swapchainBarrier(
+                    D3D12_BARRIER_SYNC_RENDER_TARGET,
+                    D3D12_BARRIER_SYNC_NONE,
+                    D3D12_BARRIER_ACCESS_RENDER_TARGET,
+                    D3D12_BARRIER_ACCESS_NO_ACCESS,
+                    D3D12_BARRIER_LAYOUT_RENDER_TARGET,
+                    D3D12_BARRIER_LAYOUT_PRESENT,
+                    mSwapChainRes[mFrameIndex].Get(),
+                    CD3DX12_BARRIER_SUBRESOURCE_RANGE(0xffffffff),
+                    D3D12_TEXTURE_BARRIER_FLAG_NONE
+                );
+                CD3DX12_BARRIER_GROUP group(1, &swapchainBarrier);
+                static_cast<ID3D12GraphicsCommandList7*>(mGraphicsList[mFrameIndex]->getRawCommandList())->Barrier(1, &group);
+            }
+            else
+            {
+                auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(mSwapChainRes[mFrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+                static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ResourceBarrier(1, &barrier);
+            }
+
             mGraphicsList[mFrameIndex]->end();
             auto tempPtr = mGraphicsList[mFrameIndex].get();
             executeCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS, 1, &tempPtr);
