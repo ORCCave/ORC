@@ -34,6 +34,7 @@ For other Linux distributions, the required packages are similar.
 ## Third Party Libraries
  * [SDL](https://github.com/libsdl-org/SDL) - (Zlib license)
  * [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) - (MIT license)
+ * [DirectX Headers](https://github.com/microsoft/DirectX-Headers) - (MIT license)
 
 ## License
 
