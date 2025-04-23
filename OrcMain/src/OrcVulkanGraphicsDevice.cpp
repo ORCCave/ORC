@@ -257,7 +257,7 @@ namespace Orc
             vk::SwapchainCreateInfoKHR createInfo(
                 {},
                 mSurfaceAndInstance.mSurface,
-                3,
+                ORC_SWAPCHAIN_COUNT,
                 surfaceFormat.format,
                 surfaceFormat.colorSpace,
                 vk::Extent2D(w, h),
