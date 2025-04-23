@@ -7,6 +7,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <source_location>
 #include <stacktrace>
 #include <stdexcept>

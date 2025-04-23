@@ -125,62 +125,51 @@ namespace Orc
         void _createDevice()
         {
             auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
-            auto findQueueFamilyEx = [&queueFamilies](vk::QueueFlagBits flag, const std::vector<int32>& excludes = {}) -> int32
-            {
-                for (int32 i = 0; i < static_cast<int32>(queueFamilies.size()); ++i)
-                {
-                    if (std::find(excludes.begin(), excludes.end(), i) != excludes.end())
-                        continue;
-                    if (queueFamilies[i].queueFlags & flag)
-                        return i;
+            for (uint32 i = 0; i < queueFamilies.size(); ++i) {
+                const auto& props = queueFamilies[i];
+
+                if ((props.queueFlags & vk::QueueFlagBits::eGraphics) && !mGraphicsFamily.has_value()) {
+                    mGraphicsFamily = i;
+                    continue;
                 }
-                return -1;
-            };
+                if ((props.queueFlags & vk::QueueFlagBits::eCompute) && !mComputeFamily.has_value()) {
+                    mComputeFamily = i;
+                    continue;
+                }
+                if ((props.queueFlags & vk::QueueFlagBits::eTransfer) && !mTransferFamily.has_value()) {
+                    mTransferFamily = i;
+                    continue;
+                }
+            }
 
-            mGraphicsFamily = findQueueFamilyEx(vk::QueueFlagBits::eGraphics);
-            if (mGraphicsFamily == -1)
+            if(!mGraphicsFamily.has_value())
                 throw OrcException("Graphics queue family not found");
-
-            mComputeFamily = findQueueFamilyEx(vk::QueueFlagBits::eCompute, { mGraphicsFamily });
-            if (mComputeFamily == -1)
+            if(!mComputeFamily.has_value())
                 mComputeFamily = mGraphicsFamily;
 
-            mTransferFamily = findQueueFamilyEx(vk::QueueFlagBits::eTransfer, { mGraphicsFamily,mComputeFamily });
-            if (mTransferFamily == -1)
+            if (!mTransferFamily.has_value())
             {
-                if (queueFamilies[mGraphicsFamily].queueFlags & vk::QueueFlagBits::eTransfer)
+                if (queueFamilies[mGraphicsFamily.value()].queueFlags & vk::QueueFlagBits::eTransfer)
+                {
                     mTransferFamily = mGraphicsFamily;
-                else if (queueFamilies[mComputeFamily].queueFlags & vk::QueueFlagBits::eTransfer)
+                }
+                else if (queueFamilies[mComputeFamily.value()].queueFlags & vk::QueueFlagBits::eTransfer)
+                {
                     mTransferFamily = mComputeFamily;
+                }
                 else
+                {
                     throw OrcException("Transfer queue family not found");
-            }
-
-            float queuePriority = 1.0f;
-            std::map<uint32, uint32> familyQueueCount;
-            familyQueueCount[mGraphicsFamily] += 1;
-            familyQueueCount[mComputeFamily]  += 1;
-            familyQueueCount[mTransferFamily] += 1;
-            std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-            for (auto& pair : familyQueueCount)
-            {
-                vk::DeviceQueueCreateInfo queueCreateInfo;
-                queueCreateInfo.queueFamilyIndex = pair.first;
-                auto availableQueues = queueFamilies[pair.first].queueCount;
-                auto requestedQueues = pair.second;
-                if (requestedQueues > availableQueues)
-                {
-                    requestedQueues = availableQueues;
-                }
-                queueCreateInfo.queueCount = requestedQueues;
-                queueCreateInfo.pQueuePriorities = &queuePriority;
-                queueCreateInfos.push_back(queueCreateInfo);
-
-                if (pair.first == mTransferFamily)
-                {
-                    mTransferQueueCount = requestedQueues;
                 }
             }
+
+            float graphicspriority = 1.0f;
+            float computepriority = 0.8f;
+            float copypriority = 0.5f;
+
+            _getGraphicsIndex(graphicspriority);
+            _getComputeIndex(computepriority);
+            _getCopyIndex(copypriority);
 
             std::vector<const char*> extensions
             {
@@ -192,8 +181,8 @@ namespace Orc
             dynamicRenderingFeatures.pNext = &sync2Features;
             vk::DeviceCreateInfo createInfo(
                 {},
-                static_cast<uint32>(queueCreateInfos.size()),
-                queueCreateInfos.data(),
+                static_cast<uint32>(mQueueCreateInfos.size()),
+                mQueueCreateInfos.data(),
                 0,
                 nullptr,
                 static_cast<uint32>(extensions.size()),
@@ -202,6 +191,64 @@ namespace Orc
                 &dynamicRenderingFeatures
             );
             mDevice = mPhysicalDevice.createDeviceUnique(createInfo);
+        }
+
+        void _getGraphicsIndex(float& priority)
+        {
+            vk::DeviceQueueCreateInfo qci{};
+            qci.queueFamilyIndex = mGraphicsFamily.value();
+            qci.queueCount = 1;
+            qci.pQueuePriorities = &priority;
+            mQueueCreateInfos.push_back(qci);
+            mGraphicsQueueIndex = 0;
+        }
+
+        void _getComputeIndex(float& priority)
+        {
+            if (mComputeFamily == mGraphicsFamily)
+            {
+                auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
+                mQueueCreateInfos[0].queueCount = queueFamilies[mComputeFamily.value()].queueCount == 1 ? 1 : 2;
+                mComputeQueueIndex = mQueueCreateInfos[0].queueCount - 1;
+            }
+            else
+            {
+                vk::DeviceQueueCreateInfo qci{};
+                qci.queueFamilyIndex = mComputeFamily.value();
+                qci.queueCount = 1;
+                qci.pQueuePriorities = &priority;
+                mQueueCreateInfos.push_back(qci);
+                mComputeQueueIndex = 0;
+            }
+        }
+
+        void _getCopyIndex(float& priority)
+        {
+            auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
+            if (mTransferFamily == mGraphicsFamily && mTransferFamily == mComputeFamily)
+            {
+                mQueueCreateInfos[0].queueCount = queueFamilies[mTransferFamily.value()].queueCount >= 3 ? 3 : queueFamilies[mTransferFamily.value()].queueCount;
+                mTransferQueueIndex = mQueueCreateInfos[0].queueCount - 1;
+            }
+            else if (mTransferFamily == mGraphicsFamily)
+            {
+                mQueueCreateInfos[0].queueCount = queueFamilies[mTransferFamily.value()].queueCount == 1 ? 1 : 2;
+                mTransferQueueIndex = mQueueCreateInfos[0].queueCount - 1;
+            }
+            else if (mTransferFamily == mComputeFamily)
+            {
+                mQueueCreateInfos[1].queueCount = queueFamilies[mTransferFamily.value()].queueCount == 1 ? 1 : 2;
+                mTransferQueueIndex = mQueueCreateInfos[1].queueCount - 1;
+            }
+            else
+            {
+                vk::DeviceQueueCreateInfo qci{};
+                qci.queueFamilyIndex = mTransferFamily.value();
+                qci.queueCount = 1;
+                qci.pQueuePriorities = &priority;
+                mQueueCreateInfos.push_back(qci);
+                mTransferQueueIndex = 0;
+            }
         }
 
         void _createSwapChain(uint32 w, uint32 h)
@@ -230,23 +277,16 @@ namespace Orc
 
         void _createQueue()
         {
-            mGraphicsQueue = mDevice->getQueue(mGraphicsFamily, mGraphicsQueueIndex);
-
-            auto queueFamilies = mPhysicalDevice.getQueueFamilyProperties();
-
-            if (mComputeFamily == mGraphicsFamily && queueFamilies[mComputeFamily].queueCount > 1) { mComputeQueueIndex = 1; }
-            mComputeQueue = mDevice->getQueue(mComputeFamily, mComputeQueueIndex);
-
-            // Avoid repeat
-            mTransferQueueIndex = mTransferQueueCount - 1;
-            mTransferQueue = mDevice->getQueue(mTransferFamily, mTransferQueueIndex);
+            mGraphicsQueue = mDevice->getQueue(mGraphicsFamily.value(), mGraphicsQueueIndex);
+            mComputeQueue = mDevice->getQueue(mComputeFamily.value(), mComputeQueueIndex);
+            mTransferQueue = mDevice->getQueue(mTransferFamily.value(), mTransferQueueIndex);
         }
 
         void _createCommandPool()
         {
-            mGraphicsCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mGraphicsFamily));
-            mComputeCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mComputeFamily));
-            mTransferCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mTransferFamily));
+            mGraphicsCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mGraphicsFamily.value()));
+            mComputeCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mComputeFamily.value()));
+            mTransferCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mTransferFamily.value()));
         }
 
         void _createCommandBuffer()
@@ -473,14 +513,12 @@ namespace Orc
             return formats[0];
         }
 
-        int32 mGraphicsFamily = -1;
-        int32 mComputeFamily = -1;
-        int32 mTransferFamily = -1;
+        std::optional<uint32> mGraphicsFamily;
+        std::optional<uint32> mComputeFamily;
+        std::optional<uint32> mTransferFamily;
         uint32 mGraphicsQueueIndex = 0;
         uint32 mComputeQueueIndex = 0;
         uint32 mTransferQueueIndex = 0;
-
-        uint32 mTransferQueueCount = 0;
 
         uint32 mFrameIndex = 0;
         uint32 mCurrentIndex = 0;
@@ -512,6 +550,8 @@ namespace Orc
 
         uint32 mWidth;
         uint32 mHeight;
+
+        std::vector<vk::DeviceQueueCreateInfo> mQueueCreateInfos;
     };
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
