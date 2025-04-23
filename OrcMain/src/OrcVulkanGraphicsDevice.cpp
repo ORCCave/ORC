@@ -311,7 +311,6 @@ namespace Orc
         void _transitionSwapchainForDrawing()
         {
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[0]->getRawCommandList()));
-            vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
             mGraphicsList[0]->begin();
             for (uint32 i = 0;i < 3; ++i)
             {
