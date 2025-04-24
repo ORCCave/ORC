@@ -221,7 +221,6 @@ namespace Orc
 
         void executeCommandList(GraphicsCommandList* list)
         {
-
             auto tempList = reinterpret_cast<ID3D12CommandList*>(list->getRawCommandList());
             auto type = list->getCommandListType();
             ID3D12CommandList* tempLists[1] = { tempList };

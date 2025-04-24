@@ -296,7 +296,7 @@ namespace Orc
         {
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[0]->getRawCommandList()));
             mGraphicsList[0]->begin();
-            for (uint32 i = 0;i < 3; ++i)
+            for (uint32 i = 0; i < 3; ++i)
             {
                 vk::ImageMemoryBarrier2 imageMemoryBarrier{};
                 imageMemoryBarrier.srcStageMask = vk::PipelineStageFlagBits2::eTopOfPipe;
