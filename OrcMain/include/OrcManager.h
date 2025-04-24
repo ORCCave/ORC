@@ -8,6 +8,7 @@
 
 namespace Orc
 {
+    class Root;
     class GraphicsCommandListManager
     {
     public:
@@ -18,9 +19,13 @@ namespace Orc
         GraphicsCommandListManager(std::shared_ptr<GraphicsDevice> device) : mRefDevice(device) {}
         ~GraphicsCommandListManager() = default;
 
+        void releaseCommandList();
+
         std::vector<std::shared_ptr<GraphicsCommandList>> mLists;
         std::shared_ptr<GraphicsDevice> mRefDevice;
 
         std::mutex mLock;
+
+        friend Root;
     };
 }

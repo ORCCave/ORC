@@ -20,4 +20,9 @@ namespace Orc
         it->get()->mIsUsable = false;
         return it->get();
     }
+
+    void GraphicsCommandListManager::releaseCommandList()
+    {
+
+    }
 }

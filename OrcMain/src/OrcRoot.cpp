@@ -52,6 +52,12 @@ namespace Orc
                 break;
             mDevice->beginDraw();
             mDevice->endDraw();
+
+            if (mGCLManager)
+            {
+                mGCLManager->releaseCommandList();
+            }
+
         }
     }
 }
