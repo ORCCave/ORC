@@ -1,6 +1,10 @@
 #pragma once
 
-#include "OrcStdHeaders.h"
+#include <format>
+#include <source_location>
+#include <stacktrace>
+#include <stdexcept>
+#include <string>
 
 namespace Orc
 {
