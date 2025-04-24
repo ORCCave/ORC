@@ -14,7 +14,8 @@ namespace Orc
                 mHD3D12 = LoadLibraryW(L"d3d12.dll");
             if (mHDXGI == NULL)
                 mHDXGI = LoadLibraryW(L"dxgi.dll");
-            if (!mHD3D12 || !mHDXGI) { throw OrcException("Can't find D3D dll library"); }
+            if (!mHD3D12 || !mHDXGI)
+                throw OrcException("Can't find D3D dll library"); 
 #ifdef _DEBUG
             if (mHD3D12Debug == NULL)
                 mHD3D12Debug = LoadLibraryW(L"D3D12SDKLayers.dll");
@@ -35,19 +36,15 @@ namespace Orc
             _createRTV();
 
             for (uint32 i = 0;i < ORC_SWAPCHAIN_COUNT; ++i)
-            {
                 mGraphicsList[i] = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
-            }
+
             mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
             mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
 
             D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
             mEnhancedBarriersSupported = false;
             if (SUCCEEDED(mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12))))
-            {
                 mEnhancedBarriersSupported = options12.EnhancedBarriersSupported;
-            }
-
         }
 
         ~D3D12GraphicsDevice()
@@ -74,17 +71,16 @@ namespace Orc
             }
 
             if (mHDXGIDebug)
-            {
                 factoryFlag = DXGI_CREATE_FACTORY_DEBUG;
-            }
+
 #endif
             auto pfnCreateDXGIFactory2 = reinterpret_cast<decltype(&CreateDXGIFactory2)>(GetProcAddress(mHDXGI, "CreateDXGIFactory2"));
-            if (!pfnCreateDXGIFactory2) { throw OrcException("Can't find CreateDXGIFactory2"); }
+            if (!pfnCreateDXGIFactory2) throw OrcException("Can't find CreateDXGIFactory2"); 
             CHECK_DX_RESULT(pfnCreateDXGIFactory2(factoryFlag, IID_PPV_ARGS(&mFactory)));
             CHECK_DX_RESULT(mFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&mAdapter)));
 
             auto pfnD3D12CreateDevice = reinterpret_cast<PFN_D3D12_CREATE_DEVICE>(GetProcAddress(mHD3D12, "D3D12CreateDevice"));
-            if (!pfnD3D12CreateDevice) { throw OrcException("Can't find D3D12CreateDevice"); }
+            if (!pfnD3D12CreateDevice) throw OrcException("Can't find D3D12CreateDevice");
             CHECK_DX_RESULT(pfnD3D12CreateDevice(mAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice)));
         }
 
@@ -189,9 +185,7 @@ namespace Orc
             {
                 CHECK_DX_RESULT(mFence->SetEventOnCompletion(mFenceValue[mFrameIndex], mEvent.Get()));
                 if (WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
-                {
                     throw OrcException("WaitForSingleObjectEx failed");
-                }
             }
             mFenceValue[mFrameIndex] = currentFenceValue + 1;
         }
@@ -209,25 +203,19 @@ namespace Orc
                 CHECK_DX_RESULT(mGraphicsQueue->Signal(mFence.Get(), mFenceValue[mFrameIndex]));
                 CHECK_DX_RESULT(mFence->SetEventOnCompletion(mFenceValue[mFrameIndex]++, mEvent.Get()));
                 if (WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
-                {
                     throw OrcException("WaitForSingleObjectEx failed");
-                }
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue);
                 mCopyFence->SetEventOnCompletion(mCopyFenceValue++, mCopyEvent.Get());
                 if (WaitForSingleObjectEx(mCopyEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
-                {
                     throw OrcException("WaitForSingleObjectEx failed");
-                }
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
                 mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue);
                 mComputeFence->SetEventOnCompletion(mComputeFenceValue++, mComputeEvent.Get());
                 if (WaitForSingleObjectEx(mComputeEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
-                {
                     throw OrcException("WaitForSingleObjectEx failed");
-                }
                 break;
             }
         }
@@ -332,9 +320,9 @@ namespace Orc
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
     {
         auto props = SDL_GetWindowProperties(static_cast<SDL_Window*>(windowHandle));
-        if (!props) { throw OrcException(SDL_GetError()); }
+        if (!props) throw OrcException(SDL_GetError());
         auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-        if (!hwnd) { throw OrcException(SDL_GetError()); }
+        if (!hwnd) throw OrcException(SDL_GetError());
         return std::make_shared<D3D12GraphicsDevice>((HWND)hwnd, width, height);
     }
 }

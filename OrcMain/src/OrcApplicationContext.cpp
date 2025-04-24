@@ -16,13 +16,7 @@ namespace Orc
 
     std::shared_ptr<void> createWindow(const char* title, int w, int h, SDL_WindowFlags flags)
     {
-        return std::shared_ptr<void>(
-            SDL_CreateWindow(title, w, h, flags), 
-            [](void* ptr) 
-            {
-                SDL_DestroyWindow(static_cast<SDL_Window*>(ptr));
-            }
-        );
+        return std::shared_ptr<void>(SDL_CreateWindow(title, w, h, flags), [](void* ptr) {SDL_DestroyWindow(static_cast<SDL_Window*>(ptr));});
     }
 
     class ApplicationContext::impl
@@ -37,18 +31,17 @@ namespace Orc
     {
         SDL_WindowFlags windowFlags = 0;
         if (type == GraphicsDevice::GraphicsDeviceType::GDT_VULKAN)
-        {
             windowFlags = SDL_WINDOW_VULKAN;
-        }
+
 #ifdef ORC_PLATFORM_LINUX
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
         if (!SDL_Init(SDL_INIT_VIDEO))
         {
             SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
-            if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
+            if (!SDL_Init(SDL_INIT_VIDEO)) throw OrcException(SDL_GetError());
         }
 #else
-        if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
+        if (!SDL_Init(SDL_INIT_VIDEO)) throw OrcException(SDL_GetError());
 #endif
         mWindowHandle = createWindow(mWindowTitle.c_str(), mWidth, mHeight, windowFlags);
         if (!mWindowHandle)

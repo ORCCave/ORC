@@ -36,9 +36,6 @@ namespace Orc
             if (!running)
                 break;
             mDevice->beginDraw();
-            // todo
-            //device->clearSwapChainColor(0.0f, 1.0f, 0.0f, 1.0f);
-
             mDevice->endDraw();
         }
     }

@@ -13,12 +13,8 @@ namespace Orc
     {
         std::vector<vk::LayerProperties> properties = vk::enumerateInstanceLayerProperties();
         for (auto const& property : properties)
-        {
-            if (std::string(property.layerName.data()) ==  "VK_LAYER_KHRONOS_validation")
-            {
+            if (std::string(property.layerName.data()) == "VK_LAYER_KHRONOS_validation")
                 return true;
-            }
-        }
         return false;
     }
 
@@ -29,7 +25,8 @@ namespace Orc
         {
             VulkanSurfaceWrapper(vk::Instance instance, SDL_Window* window) : mTempInst(instance)
             {
-                if (!SDL_Vulkan_CreateSurface(window, instance, nullptr, &mSurface)) { throw OrcException(SDL_GetError()); }
+                if (!SDL_Vulkan_CreateSurface(window, instance, nullptr, &mSurface)) 
+                    throw OrcException(SDL_GetError());
             }
 
             ~VulkanSurfaceWrapper()
@@ -44,9 +41,7 @@ namespace Orc
         void checkAndAddExtension(std::vector<const char*>& extensions, const char* name)
         {
             if (std::find_if(extensions.begin(), extensions.end(), [name](const char* ext) { return std::strcmp(ext, name) == 0; }) == extensions.end())
-            {
                 extensions.push_back(name);
-            }
         }
 
     public:
@@ -71,6 +66,7 @@ namespace Orc
         ~VulkanGraphicsDevice()
         {
             mDevice->waitIdle();
+            mSwapChain.reset();
             mSurfaceWrapper.reset();
         }
 
@@ -105,9 +101,7 @@ namespace Orc
         {
             auto physicalDevices = mInstance->enumeratePhysicalDevices();
             if (physicalDevices.empty())
-            {
                 throw OrcException("Physical device not found");
-            }
 
             mPhysicalDevice = physicalDevices[0];
             for (const auto& device : physicalDevices)
@@ -126,15 +120,18 @@ namespace Orc
             for (uint32 i = 0; i < queueFamilies.size(); ++i) {
                 const auto& props = queueFamilies[i];
 
-                if ((props.queueFlags & vk::QueueFlagBits::eGraphics) && !mGraphicsFamily.has_value()) {
+                if ((props.queueFlags & vk::QueueFlagBits::eGraphics) && !mGraphicsFamily.has_value())
+                {
                     mGraphicsFamily = i;
                     continue;
                 }
-                if ((props.queueFlags & vk::QueueFlagBits::eCompute) && !mComputeFamily.has_value()) {
+                if ((props.queueFlags & vk::QueueFlagBits::eCompute) && !mComputeFamily.has_value())
+                {
                     mComputeFamily = i;
                     continue;
                 }
-                if ((props.queueFlags & vk::QueueFlagBits::eTransfer) && !mTransferFamily.has_value()) {
+                if ((props.queueFlags & vk::QueueFlagBits::eTransfer) && !mTransferFamily.has_value())
+                {
                     mTransferFamily = i;
                     continue;
                 }
@@ -148,17 +145,11 @@ namespace Orc
             if (!mTransferFamily.has_value())
             {
                 if (queueFamilies[mGraphicsFamily.value()].queueFlags & vk::QueueFlagBits::eTransfer)
-                {
                     mTransferFamily = mGraphicsFamily;
-                }
                 else if (queueFamilies[mComputeFamily.value()].queueFlags & vk::QueueFlagBits::eTransfer)
-                {
                     mTransferFamily = mComputeFamily;
-                }
                 else
-                {
                     throw OrcException("Transfer queue family not found");
-                }
             }
 
             float graphicspriority = 1.0f;
@@ -169,10 +160,7 @@ namespace Orc
             _getComputeIndex(computepriority);
             _getCopyIndex(copypriority);
 
-            std::vector<const char*> extensions
-            {
-                "VK_KHR_swapchain",
-            };
+            std::vector<const char*> extensions = { "VK_KHR_swapchain" };
             // Open dynamic rendering
             vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures(true);
             vk::PhysicalDeviceSynchronization2Features sync2Features(true);
@@ -290,9 +278,8 @@ namespace Orc
         void _createCommandBuffer()
         {
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
-            {
                 mGraphicsList[i] = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
-            }
+
 
             mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
             mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
@@ -301,9 +288,8 @@ namespace Orc
         void _createFence()
         {
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
-            {
                 mMainFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-            }
+
         }
 
         void _transitionSwapchainForDrawing()
@@ -357,18 +343,15 @@ namespace Orc
         void beginDraw()
         {
             if(mDevice->waitForFences(1, &mMainFence[mCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
-            {
                 throw OrcException("Failed to wait for fences");
-            }
+
             if (mDevice->resetFences(1, &mMainFence[mCurrentIndex].get()) != vk::Result::eSuccess)
-            {
                 throw OrcException("Failed to reset fences");
-            }
+
             auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore[mCurrentIndex].get());
             if (frameIndex.result != vk::Result::eSuccess)
-            {
                 throw OrcException("Failed to acquire next image");
-            }
+
             mFrameIndex = frameIndex.value;
             mGraphicsList[mCurrentIndex]->begin();
 
@@ -407,9 +390,7 @@ namespace Orc
             presentInfo.pWaitSemaphores = &mRenderFinishedSemaphore[mCurrentIndex].get();
 
             if (mGraphicsQueue.presentKHR(presentInfo) != vk::Result::eSuccess)
-            {
                 throw OrcException("Failed to present image");
-            }
 
             mCurrentIndex = (mCurrentIndex + 1) % ORC_SWAPCHAIN_COUNT;
         }
@@ -441,10 +422,8 @@ namespace Orc
         {
             std::vector<vk::CommandBuffer> commandBuffers;
             for (uint32 i = 0; i < numLists; ++i)
-            {
-                auto rawList = lists[i]->getRawCommandList();
-                commandBuffers.emplace_back(static_cast<VkCommandBuffer>(rawList));
-            }
+                commandBuffers.emplace_back(static_cast<VkCommandBuffer>(lists[i]->getRawCommandList()));
+
             vk::SubmitInfo submitInfo;
             submitInfo.commandBufferCount = numLists;
             submitInfo.pCommandBuffers = commandBuffers.data();
@@ -466,9 +445,8 @@ namespace Orc
         {
             auto formats = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceWrapper->mSurface);
             if (formats.empty())
-            {
                 throw OrcException("Surface format not found");
-            }
+
             const std::vector<vk::Format> preferredFormats =
             {
                 vk::Format::eR8G8B8A8Unorm,
@@ -479,13 +457,8 @@ namespace Orc
 
             for (const auto& pref : preferredFormats)
             {
-                auto it = std::find_if(formats.begin(), formats.end(),
-                    [pref](const vk::SurfaceFormatKHR& sf)
-                    {
-                        return (sf.format == pref && sf.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear);
-                    }
-                );
-                if (it != formats.end()) {
+                if (auto it = std::find_if(formats.begin(), formats.end(), [pref](const vk::SurfaceFormatKHR& sf) {return (sf.format == pref && sf.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear);});it != formats.end())
+                {
                     mSwapChainFormat = it->format;
                     return *it;
                 }
@@ -493,13 +466,7 @@ namespace Orc
 
             for (const auto& pref : preferredFormats)
             {
-                auto it = std::find_if(formats.begin(), formats.end(),
-                    [pref](const vk::SurfaceFormatKHR& sf)
-                    {
-                        return (sf.format == pref);
-                    }
-                );
-                if (it != formats.end())
+                if (auto it = std::find_if(formats.begin(), formats.end(), [pref](const vk::SurfaceFormatKHR& sf) {return (sf.format == pref);});it != formats.end())
                 {
                     mSwapChainFormat = it->format;
                     return *it;
