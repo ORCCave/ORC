@@ -24,68 +24,30 @@ namespace Orc
 
     class VulkanGraphicsDevice : public GraphicsDevice
     {
-        struct VulkanSurfaceAndInstanceWrapper
+        // For raii
+        struct VulkanSurfaceWrapper
         {
-            VulkanSurfaceAndInstanceWrapper(SDL_Window* window)
+			VulkanSurfaceWrapper(vk::Instance instance, SDL_Window* window) : mTempInst(instance)
             {
-                uint32 count_instance_extensions;
-                const char* const* instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count_instance_extensions);
-                if (instance_extensions == nullptr) { throw OrcException(SDL_GetError()); }
-                std::vector<const char*> extensions(instance_extensions, instance_extensions + count_instance_extensions);
-                vk::ApplicationInfo appInfo("ORC", 1, "ORC", 1, VK_API_VERSION_1_3);
-                std::vector<const char*> layers;
-#ifndef NDEBUG
-                auto instanceLayerProperties = vk::enumerateInstanceLayerProperties();
-                layers.emplace_back("VK_LAYER_KHRONOS_validation");
-                if (checkLayers(layers, instanceLayerProperties))
-                {
-                    extensions.emplace_back("VK_EXT_debug_utils");
-                }
-                else
-                {
-                    layers.clear();
-                }
-#endif
-                extensions.emplace_back("VK_EXT_swapchain_colorspace");
-                vk::InstanceCreateInfo createInfo(
-                    {},
-                    &appInfo,
-                    static_cast<uint32>(layers.size()), layers.size() ? layers.data() : nullptr,
-                    static_cast<uint32>(extensions.size()), extensions.data()
-                );
-                mInstance = vk::createInstanceUnique(createInfo);
-#ifdef ORC_PLATFORM_WIN32
-                auto props = SDL_GetWindowProperties(static_cast<SDL_Window*>(window));
-                if (!props) { throw OrcException(SDL_GetError()); }
-                auto instance = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_INSTANCE_POINTER, nullptr);
-                if (!instance) { throw OrcException(SDL_GetError()); }
-                auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-                if (!hwnd) { throw OrcException(SDL_GetError()); }
-                vk::Win32SurfaceCreateInfoKHR surfaceInfo({}, reinterpret_cast<HINSTANCE>(instance), reinterpret_cast<HWND>(hwnd));
-                mSurface = static_cast<VkSurfaceKHR>(mInstance->createWin32SurfaceKHR(surfaceInfo));
-#else
-                if (!SDL_Vulkan_CreateSurface(window, mInstance.get(), nullptr, &mSurface)) { throw OrcException(SDL_GetError()); }
-#endif
+                if (!SDL_Vulkan_CreateSurface(window, instance, nullptr, &mSurface)) { throw OrcException(SDL_GetError()); }
             }
 
-            ~VulkanSurfaceAndInstanceWrapper()
+            ~VulkanSurfaceWrapper()
             {
-#ifdef ORC_PLATFORM_WIN32
-                mInstance->destroySurfaceKHR(mSurface);
-#else
-                SDL_Vulkan_DestroySurface(mInstance.get(), mSurface, nullptr);
-#endif
+                SDL_Vulkan_DestroySurface(mTempInst, mSurface, nullptr);
             }
 
+            vk::Instance mTempInst;
             VkSurfaceKHR mSurface;
-            vk::UniqueInstance mInstance;
         };
 
     public:
-        VulkanGraphicsDevice(SDL_Window* window, uint32 width, uint32 height) : mSurfaceAndInstance(window)
+        VulkanGraphicsDevice(SDL_Window* window, uint32 width, uint32 height)
         {
             mWidth = width;
             mHeight = height;
+            _createInstance();
+			mSurfaceWrapper = std::make_unique<VulkanSurfaceWrapper>(mInstance.get(), window);
             _createPhysicalDevice();
             _createDevice();
             _createSwapChain(width, height);
@@ -103,9 +65,38 @@ namespace Orc
             mDevice->waitIdle();
         }
 
+        void _createInstance()
+        {
+            uint32 count_instance_extensions;
+            const char* const* instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count_instance_extensions);
+            if (instance_extensions == nullptr) { throw OrcException(SDL_GetError()); }
+            std::vector<const char*> extensions(instance_extensions, instance_extensions + count_instance_extensions);
+            vk::ApplicationInfo appInfo("ORC", 1, "ORC", 1, VK_API_VERSION_1_3);
+            std::vector<const char*> layers;
+#ifndef NDEBUG
+            auto instanceLayerProperties = vk::enumerateInstanceLayerProperties();
+            layers.emplace_back("VK_LAYER_KHRONOS_validation");
+            if (checkLayers(layers, instanceLayerProperties))
+            {
+                extensions.emplace_back("VK_EXT_debug_utils");
+            }
+            else
+            {
+                layers.clear();
+            }
+#endif
+            vk::InstanceCreateInfo createInfo(
+                {},
+                &appInfo,
+                static_cast<uint32>(layers.size()), layers.size() ? layers.data() : nullptr,
+                static_cast<uint32>(extensions.size()), extensions.data()
+            );
+            mInstance = vk::createInstanceUnique(createInfo);
+        }
+
         void _createPhysicalDevice()
         {
-            auto physicalDevices = mSurfaceAndInstance.mInstance->enumeratePhysicalDevices();
+            auto physicalDevices = mInstance->enumeratePhysicalDevices();
             if (physicalDevices.empty())
             {
                 throw OrcException("Physical device not found");
@@ -256,7 +247,7 @@ namespace Orc
             auto surfaceFormat = _getSurfaceFormat();
             vk::SwapchainCreateInfoKHR createInfo(
                 {},
-                mSurfaceAndInstance.mSurface,
+                mSurfaceWrapper->mSurface,
                 ORC_SWAPCHAIN_COUNT,
                 surfaceFormat.format,
                 surfaceFormat.colorSpace,
@@ -466,7 +457,7 @@ namespace Orc
 
         vk::SurfaceFormatKHR _getSurfaceFormat()
         {
-            auto formats = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceAndInstance.mSurface);
+            auto formats = mPhysicalDevice.getSurfaceFormatsKHR(mSurfaceWrapper->mSurface);
             if (formats.empty())
             {
                 throw OrcException("Surface format not found");
@@ -512,6 +503,7 @@ namespace Orc
             return formats[0];
         }
 
+        vk::UniqueInstance mInstance;
         std::optional<uint32> mGraphicsFamily;
         std::optional<uint32> mComputeFamily;
         std::optional<uint32> mTransferFamily;
@@ -522,7 +514,7 @@ namespace Orc
         uint32 mFrameIndex = 0;
         uint32 mCurrentIndex = 0;
 
-        VulkanSurfaceAndInstanceWrapper mSurfaceAndInstance;
+        std::unique_ptr<VulkanSurfaceWrapper> mSurfaceWrapper;
 
         vk::PhysicalDevice mPhysicalDevice;
         vk::UniqueDevice mDevice;

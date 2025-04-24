@@ -6,20 +6,18 @@
 
 namespace Orc
 {
-    GraphicsDevice* Root::getGraphicsDevice(GraphicsDevice::GraphicsDeviceType type)
+    Root::Root(void* handle, uint32 w, uint32 h, GraphicsDevice::GraphicsDeviceType type) :
+        mWindowHandle(handle), mWidthForSwapChain(w), mHeightForSwapChain(h), mGraphicsDeviceType(type)
     {
-        auto it = mDeviceCache.find(type);
-        if (it != mDeviceCache.end())
-        {
-            return it->second.get();
-        }
-
-        auto device = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, type);
-        mDeviceCache[type] = device;
-        return device.get();
+        mDevice = createGraphicsDeviceByType(mWindowHandle, mWidthForSwapChain, mHeightForSwapChain, mGraphicsDeviceType);
     }
 
-    void Root::startRendering(GraphicsDevice* device)
+    GraphicsDevice* Root::getGraphicsDevice()
+    {
+        return mDevice.get();
+    }
+
+    void Root::startRendering()
     {
         SDL_Event event;
         bool running = true;
@@ -37,11 +35,11 @@ namespace Orc
 
             if (!running)
                 break;
-            device->beginDraw();
+            mDevice->beginDraw();
             // todo
             //device->clearSwapChainColor(0.0f, 1.0f, 0.0f, 1.0f);
 
-            device->endDraw();
+            mDevice->endDraw();
         }
     }
 }

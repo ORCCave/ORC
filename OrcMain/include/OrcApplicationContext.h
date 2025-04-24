@@ -1,6 +1,7 @@
 #pragma once
 
 #include "OrcDefines.h"
+#include "OrcGraphicsDevice.h"
 #include "OrcRoot.h"
 #include "OrcStdHeaders.h"
 #include "OrcTypes.h"
@@ -10,7 +11,7 @@ namespace Orc
     class ApplicationContext
     {
     public:
-        ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height);
+        ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type = GraphicsDevice::GraphicsDeviceType::GDT_VULKAN);
         ~ApplicationContext();
 
         Root* getRoot() const;

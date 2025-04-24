@@ -10,7 +10,7 @@ namespace Orc
     class InternalRoot : public Root
     {
     public:
-        InternalRoot(void* handle, uint32 width, uint32 height) : Root(handle, width, height) {}
+        InternalRoot(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : Root(handle, width, height, type) {}
         ~InternalRoot() = default;
     };
 
@@ -28,14 +28,18 @@ namespace Orc
     class ApplicationContext::impl
     {
     public:
-        impl(void* handle, uint32 width, uint32 height) : mRoot(std::make_unique<InternalRoot>(handle, width, height)) {}
+        impl(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : mRoot(std::make_unique<InternalRoot>(handle, width, height, type)) {}
         std::unique_ptr<InternalRoot> mRoot;
     };
 
-    ApplicationContext::ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height)
+    ApplicationContext::ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type)
         : mWindowTitle(windowTitle), mWidth(width), mHeight(height)
     {
         SDL_WindowFlags windowFlags = 0;
+        if (type == GraphicsDevice::GraphicsDeviceType::GDT_VULKAN)
+        {
+            windowFlags = SDL_WINDOW_VULKAN;
+        }
 #ifdef ORC_PLATFORM_LINUX
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
         if (!SDL_Init(SDL_INIT_VIDEO))
@@ -43,7 +47,6 @@ namespace Orc
             SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
             if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
         }
-        windowFlags = SDL_WINDOW_VULKAN;
 #else
         if (!SDL_Init(SDL_INIT_VIDEO)) { throw OrcException(SDL_GetError()); }
 #endif
@@ -53,7 +56,7 @@ namespace Orc
             SDL_Quit();
             throw OrcException(SDL_GetError());
         }
-        mpimpl = std::make_unique<impl>(mWindowHandle.get(), mWidth, mHeight);
+        mpimpl = std::make_unique<impl>(mWindowHandle.get(), mWidth, mHeight, type);
     }
 
     ApplicationContext::~ApplicationContext()

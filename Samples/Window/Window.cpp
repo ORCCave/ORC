@@ -9,8 +9,8 @@ int main()
     {
         Orc::ApplicationContext ctx("OrcWindow", 800, 600);
         auto* root = ctx.getRoot();
-        auto device = root->getGraphicsDevice(Orc::GraphicsDevice::GraphicsDeviceType::GDT_VULKAN);
-        root->startRendering(device);
+        auto device = root->getGraphicsDevice();
+        root->startRendering();
     }
     catch (const std::exception& e) { std::cerr << e.what() << std::endl; }
     catch (...) { std::cerr << "Unknown exception caught." << std::endl; }
