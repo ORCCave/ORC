@@ -9,17 +9,18 @@
 
 namespace Orc
 {
-    bool checkLayers(std::vector<char const*> const& layers, std::vector<vk::LayerProperties> const& properties)
+    bool checkValidation()
     {
-        // return true if all layers are listed in the properties
-        return std::all_of(layers.begin(),
-            layers.end(),
-            [&properties](char const* name)
+        std::vector<vk::LayerProperties> properties = vk::enumerateInstanceLayerProperties();
+        std::vector<char const*> layers = { "VK_LAYER_KHRONOS_validation" };
+        for (auto const& property : properties)
+        {
+            if (std::string(property.layerName.data()) ==  "VK_LAYER_KHRONOS_validation")
             {
-                return std::any_of(properties.begin(),
-                    properties.end(),
-                    [&name](vk::LayerProperties const& property) { return strcmp(property.layerName, name) == 0; });
-            });
+                return true;
+            }
+        }
+        return false;
     }
 
     class VulkanGraphicsDevice : public GraphicsDevice
@@ -40,6 +41,14 @@ namespace Orc
             vk::Instance mTempInst;
             VkSurfaceKHR mSurface;
         };
+
+        void checkAndAddExtension(std::vector<const char*>& extensions, const char* name)
+        {
+            if (std::find_if(extensions.begin(), extensions.end(), [name](const char* ext) { return std::strcmp(ext, name) == 0; }) == extensions.end())
+            {
+                extensions.push_back(name);
+            }
+        }
 
     public:
         VulkanGraphicsDevice(SDL_Window* window, uint32 width, uint32 height)
@@ -63,6 +72,7 @@ namespace Orc
         ~VulkanGraphicsDevice()
         {
             mDevice->waitIdle();
+            mSurfaceWrapper.reset();
         }
 
         void _createInstance()
@@ -71,20 +81,18 @@ namespace Orc
             const char* const* instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count_instance_extensions);
             if (instance_extensions == nullptr) { throw OrcException(SDL_GetError()); }
             std::vector<const char*> extensions(instance_extensions, instance_extensions + count_instance_extensions);
-            vk::ApplicationInfo appInfo("ORC", 1, "ORC", 1, VK_API_VERSION_1_3);
             std::vector<const char*> layers;
 #ifndef NDEBUG
             auto instanceLayerProperties = vk::enumerateInstanceLayerProperties();
-            layers.emplace_back("VK_LAYER_KHRONOS_validation");
-            if (checkLayers(layers, instanceLayerProperties))
+            if (checkValidation())
             {
-                extensions.emplace_back("VK_EXT_debug_utils");
-            }
-            else
-            {
-                layers.clear();
+                layers.emplace_back("VK_LAYER_KHRONOS_validation");
+                checkAndAddExtension(extensions, "VK_EXT_debug_utils");
             }
 #endif
+            checkAndAddExtension(extensions, "VK_EXT_swapchain_colorspace");
+
+            vk::ApplicationInfo appInfo("ORC", 1, "ORC", 1, VK_API_VERSION_1_3);
             vk::InstanceCreateInfo createInfo(
                 {},
                 &appInfo,
