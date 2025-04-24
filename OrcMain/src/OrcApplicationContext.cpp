@@ -9,11 +9,9 @@
 namespace Orc
 {
     // For use std::unique_ptr to manage the lifetime of Root
-    class InternalRoot : public Root
+    struct RootProxy : public Root
     {
-    public:
-        InternalRoot(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : Root(handle, width, height, type) {}
-        ~InternalRoot() = default;
+        RootProxy(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : Root(handle, width, height, type) {}
     };
 
     std::shared_ptr<void> createWindow(const char* title, int w, int h, SDL_WindowFlags flags)
@@ -25,7 +23,7 @@ namespace Orc
     {
     public:
         impl(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : mRoot(std::make_unique<InternalRoot>(handle, width, height, type)) {}
-        std::unique_ptr<InternalRoot> mRoot;
+        std::unique_ptr<RootProxy> mRoot;
     };
 
     ApplicationContext::ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type)
