@@ -8,7 +8,7 @@ namespace Orc
     class D3D12GraphicsDevice : public GraphicsDevice
     {
     public:
-        D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height)
+        D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceType::GDT_D3D12)
         {
             if(mHD3D12 == NULL)
                 mHD3D12 = LoadLibraryW(L"d3d12.dll");

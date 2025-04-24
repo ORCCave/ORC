@@ -1,6 +1,5 @@
 #pragma once
 
-#include "OrcDefines.h"
 #include "OrcGraphicsCommandList.h"
 #include "OrcGraphicsDevice.h"
 #include "OrcStdHeaders.h"
@@ -17,6 +16,7 @@ namespace Orc
         GraphicsCommandListManager(std::shared_ptr<GraphicsDevice> device) : mRefDevice(device) {}
         ~GraphicsCommandListManager() = default;
 
+        std::vector<std::shared_ptr<GraphicsCommandList>> mLists;
         std::shared_ptr<GraphicsDevice> mRefDevice;
     };
 }

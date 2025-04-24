@@ -45,7 +45,7 @@ namespace Orc
         }
 
     public:
-        VulkanGraphicsDevice(SDL_Window* window, uint32 width, uint32 height)
+        VulkanGraphicsDevice(SDL_Window* window, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceType::GDT_VULKAN)
         {
             mWidth = width;
             mHeight = height;

@@ -2,9 +2,7 @@
 
 #include "OrcDefines.h"
 #include "OrcGraphicsCommandList.h"
-#include "OrcGraphicsResource.h"
 #include "OrcStdHeaders.h"
-#include "OrcTypes.h"
 
 namespace Orc
 {
@@ -20,18 +18,22 @@ namespace Orc
 
         virtual void* getRawGraphicsDevice() const = 0;
 
-        virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
-
         virtual void executeCommandList(GraphicsCommandList* list) = 0;
+
+        GraphicsDeviceType getGraphicsDeviceType() const { return mGraphicsDeviceType; }
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsDevice)
 
     protected:
-        GraphicsDevice() {}
+        GraphicsDevice(GraphicsDeviceType type) : mGraphicsDeviceType(type) {}
         virtual ~GraphicsDevice() = default;
 
         virtual void beginDraw() = 0;
         virtual void endDraw() = 0;
+
+        GraphicsDeviceType mGraphicsDeviceType;
+
+        virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
 
         friend class Root;
         friend class GraphicsCommandList;

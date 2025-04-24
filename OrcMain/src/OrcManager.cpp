@@ -2,8 +2,8 @@
 
 namespace Orc
 {
-    GraphicsCommandList& GraphicsCommandListManager::getCommandList(GraphicsCommandList::GraphicsCommandListType type)
-    {
+    //GraphicsCommandList& GraphicsCommandListManager::getCommandList(GraphicsCommandList::GraphicsCommandListType type)
+    //{
 
-    }
+    //}
 }
