@@ -418,15 +418,18 @@ namespace Orc
             return list;
         }
 
-        void executeCommandList(GraphicsCommandList::GraphicsCommandListType type, uint32 numLists, GraphicsCommandList* const* lists)
+        void executeCommandList(GraphicsCommandList* list)
         {
-            std::vector<vk::CommandBuffer> commandBuffers;
-            for (uint32 i = 0; i < numLists; ++i)
-                commandBuffers.emplace_back(static_cast<VkCommandBuffer>(lists[i]->getRawCommandList()));
+            //std::vector<vk::CommandBuffer> commandBuffers;
+            //for (uint32 i = 0; i < numLists; ++i)
+            //    commandBuffers.emplace_back(static_cast<VkCommandBuffer>(lists[i]->getRawCommandList()));
 
+            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
             vk::SubmitInfo submitInfo;
-            submitInfo.commandBufferCount = numLists;
-            submitInfo.pCommandBuffers = commandBuffers.data();
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &commandBuffer;
+
+            auto type = list->getCommandListType();
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:

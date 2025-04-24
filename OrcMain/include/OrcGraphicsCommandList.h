@@ -20,10 +20,14 @@ namespace Orc
 
         virtual void* getRawCommandList() const = 0;
 
+        GraphicsCommandListType getCommandListType() const { return mType; }
+
         ORC_DISABLE_COPY_AND_MOVE(GraphicsCommandList)
     protected:
-        GraphicsCommandList() = default;
+        GraphicsCommandList(GraphicsCommandListType type) : mType(type) {}
         virtual ~GraphicsCommandList() = default;
+
+        GraphicsCommandListType mType;
 
         friend class GraphicsDevice;
     };

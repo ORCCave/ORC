@@ -22,7 +22,7 @@ namespace Orc
 
         virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
 
-        virtual void executeCommandList(GraphicsCommandList::GraphicsCommandListType type, uint32 numLists, GraphicsCommandList* const* lists) = 0;
+        virtual void executeCommandList(GraphicsCommandList* list) = 0;
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsDevice)
 

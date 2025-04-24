@@ -170,8 +170,7 @@ namespace Orc
             }
 
             mGraphicsList[mFrameIndex]->end();
-            auto tempPtr = mGraphicsList[mFrameIndex].get();
-            executeCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS, 1, &tempPtr);
+            executeCommandList(mGraphicsList[mFrameIndex].get());
             CHECK_DX_RESULT(mSwapChain->Present(1, 0));
             moveToNextFrame();
         }
@@ -220,25 +219,22 @@ namespace Orc
             }
         }
 
-        void executeCommandList(GraphicsCommandList::GraphicsCommandListType type, uint32 numLists, GraphicsCommandList* const* lists)
+        void executeCommandList(GraphicsCommandList* list)
         {
-            std::vector<ID3D12CommandList*> tempLists;
-            for (uint32 i = 0; i < numLists; ++i)
-            {
-                auto rawList = lists[i]->getRawCommandList();
-                tempLists.push_back(reinterpret_cast<ID3D12CommandList*>(rawList));
-            }
 
+            auto tempList = reinterpret_cast<ID3D12CommandList*>(list->getRawCommandList());
+            auto type = list->getCommandListType();
+            ID3D12CommandList* tempLists[1] = { tempList };
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                mGraphicsQueue->ExecuteCommandLists(numLists, tempLists.data());
+                mGraphicsQueue->ExecuteCommandLists(1, tempLists);
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                mCopyQueue->ExecuteCommandLists(numLists, tempLists.data());
+                mCopyQueue->ExecuteCommandLists(1, tempLists);
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                mComputeQueue->ExecuteCommandLists(numLists, tempLists.data());
+                mComputeQueue->ExecuteCommandLists(1, tempLists);
                 break;
             }
         }
