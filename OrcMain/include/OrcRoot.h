@@ -2,6 +2,7 @@
 
 #include "OrcDefines.h"
 #include "OrcGraphicsDevice.h"
+#include "OrcManager.h"
 #include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
@@ -12,6 +13,8 @@ namespace Orc
     {
     public:
         GraphicsDevice* getGraphicsDevice();
+        GraphicsCommandListManager* getGraphicsCommandListManager();
+
         void startRendering();
 
         ORC_DISABLE_COPY_AND_MOVE(Root)
@@ -28,6 +31,7 @@ namespace Orc
         GraphicsDevice::GraphicsDeviceType mGraphicsDeviceType;
 
         std::shared_ptr<GraphicsDevice> mDevice;
+        std::shared_ptr<GraphicsCommandListManager> mGCLManager;
 
         friend class ApplicationContext;
     };

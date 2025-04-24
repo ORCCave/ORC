@@ -17,6 +17,11 @@ namespace Orc
         return mDevice.get();
     }
 
+    GraphicsCommandListManager* Root::getGraphicsCommandListManager()
+    {
+        return mGCLManager.get();
+    }
+
     void Root::startRendering()
     {
         SDL_Event event;

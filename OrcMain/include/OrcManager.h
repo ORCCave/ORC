@@ -2,6 +2,8 @@
 
 #include "OrcDefines.h"
 #include "OrcGraphicsCommandList.h"
+#include "OrcGraphicsDevice.h"
+#include "OrcStdHeaders.h"
 
 namespace Orc
 {
@@ -12,7 +14,9 @@ namespace Orc
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsCommandListManager)
     protected:
-        GraphicsCommandListManager() = default;
+        GraphicsCommandListManager(std::shared_ptr<GraphicsDevice> device) : mRefDevice(device) {}
         ~GraphicsCommandListManager() = default;
+
+        std::shared_ptr<GraphicsDevice> mRefDevice;
     };
 }
