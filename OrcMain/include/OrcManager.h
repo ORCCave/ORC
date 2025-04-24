@@ -3,6 +3,7 @@
 #include "OrcGraphicsDevice.h"
 
 #include <memory>
+#include <mutex>
 #include <vector>
 
 namespace Orc
@@ -19,5 +20,7 @@ namespace Orc
 
         std::vector<std::shared_ptr<GraphicsCommandList>> mLists;
         std::shared_ptr<GraphicsDevice> mRefDevice;
+
+        std::mutex mLock;
     };
 }
