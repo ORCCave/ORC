@@ -1,5 +1,7 @@
 #include "OrcManager.h"
 
+#include <algorithm>
+#include <memory>
 #include <mutex>
 
 namespace Orc
