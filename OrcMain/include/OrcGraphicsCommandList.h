@@ -4,6 +4,7 @@
 
 namespace Orc
 {
+    class GraphicsCommandListManager;
     class GraphicsCommandList
     {
     public:
@@ -26,6 +27,10 @@ namespace Orc
         GraphicsCommandList(GraphicsCommandListType type) : mType(type) {}
         virtual ~GraphicsCommandList() = default;
 
+        bool mIsUsable = true;
+
         GraphicsCommandListType mType;
+
+        friend class GraphicsCommandListManager;
     };
 }

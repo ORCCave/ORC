@@ -10,7 +10,7 @@ namespace Orc
     class GraphicsCommandListManager
     {
     public:
-        virtual GraphicsCommandList& getCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
+        GraphicsCommandList* getUsableCommandList(GraphicsCommandList::GraphicsCommandListType type);
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsCommandListManager)
     protected:
