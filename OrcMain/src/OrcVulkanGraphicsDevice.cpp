@@ -27,7 +27,7 @@ namespace Orc
         // For raii
         struct VulkanSurfaceWrapper
         {
-			VulkanSurfaceWrapper(vk::Instance instance, SDL_Window* window) : mTempInst(instance)
+            VulkanSurfaceWrapper(vk::Instance instance, SDL_Window* window) : mTempInst(instance)
             {
                 if (!SDL_Vulkan_CreateSurface(window, instance, nullptr, &mSurface)) { throw OrcException(SDL_GetError()); }
             }
@@ -47,7 +47,7 @@ namespace Orc
             mWidth = width;
             mHeight = height;
             _createInstance();
-			mSurfaceWrapper = std::make_unique<VulkanSurfaceWrapper>(mInstance.get(), window);
+            mSurfaceWrapper = std::make_unique<VulkanSurfaceWrapper>(mInstance.get(), window);
             _createPhysicalDevice();
             _createDevice();
             _createSwapChain(width, height);

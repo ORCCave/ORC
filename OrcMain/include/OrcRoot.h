@@ -25,7 +25,7 @@ namespace Orc
         uint32 mWidthForSwapChain;
         uint32 mHeightForSwapChain;
 
-		GraphicsDevice::GraphicsDeviceType mGraphicsDeviceType;
+        GraphicsDevice::GraphicsDeviceType mGraphicsDeviceType;
 
         std::shared_ptr<GraphicsDevice> mDevice;
 
