@@ -22,7 +22,7 @@ namespace Orc
     class ApplicationContext::impl
     {
     public:
-        impl(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : mRoot(std::make_unique<InternalRoot>(handle, width, height, type)) {}
+        impl(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : mRoot(std::make_unique<RootProxy>(handle, width, height, type)) {}
         std::unique_ptr<RootProxy> mRoot;
     };
 
