@@ -1,7 +1,7 @@
 #include "OrcD3D12Prerequisites.h"
 #include "OrcVulkanPrerequisites.h"
 
-#include "OrcGraphicsFactory.h"
+#include <memory>
 
 namespace Orc
 {

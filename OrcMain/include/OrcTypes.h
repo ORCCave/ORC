@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OrcStdHeaders.h"
+#include <cstdint>
 
 namespace Orc
 {

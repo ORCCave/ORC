@@ -4,7 +4,6 @@
 
 namespace Orc
 {
-    class GraphicsDevice;
     class GraphicsCommandList
     {
     public:
@@ -28,7 +27,5 @@ namespace Orc
         virtual ~GraphicsCommandList() = default;
 
         GraphicsCommandListType mType;
-
-        friend class GraphicsDevice;
     };
 }

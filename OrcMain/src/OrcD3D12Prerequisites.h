@@ -35,8 +35,11 @@
 #include "OrcException.h"
 #include "OrcGraphicsDevice.h"
 #include "OrcGraphicsPrerequisites.h"
-#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
+
+#include <format>
+#include <memory>
+#include <string>
 
 namespace Orc
 {

@@ -2,10 +2,17 @@
 #include "OrcVulkanPrerequisites.h"
 
 #include "OrcException.h"
-#include "OrcStdHeaders.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+
+#include <algorithm>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <vector>
+#include <string>
 
 namespace Orc
 {
@@ -280,7 +287,6 @@ namespace Orc
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
                 mGraphicsList[i] = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
 
-
             mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
             mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
         }
@@ -289,7 +295,6 @@ namespace Orc
         {
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
                 mMainFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
-
         }
 
         void _transitionSwapchainForDrawing()
@@ -342,7 +347,7 @@ namespace Orc
 
         void beginDraw()
         {
-            if(mDevice->waitForFences(1, &mMainFence[mCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
+            if(mDevice->waitForFences(1, &mMainFence[mCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64>::max()) != vk::Result::eSuccess)
                 throw OrcException("Failed to wait for fences");
 
             if (mDevice->resetFences(1, &mMainFence[mCurrentIndex].get()) != vk::Result::eSuccess)
@@ -420,10 +425,6 @@ namespace Orc
 
         void executeCommandList(GraphicsCommandList* list)
         {
-            //std::vector<vk::CommandBuffer> commandBuffers;
-            //for (uint32 i = 0; i < numLists; ++i)
-            //    commandBuffers.emplace_back(static_cast<VkCommandBuffer>(lists[i]->getRawCommandList()));
-
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
             vk::SubmitInfo submitInfo;
             submitInfo.commandBufferCount = 1;

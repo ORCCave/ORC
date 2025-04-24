@@ -1,9 +1,9 @@
 #pragma once
 
-#include "OrcGraphicsDevice.h"
 #include "OrcRoot.h"
-#include "OrcStdHeaders.h"
-#include "OrcTypes.h"
+
+#include <memory>
+#include <string>
 
 namespace Orc
 {

@@ -1,8 +1,10 @@
 #include "OrcApplicationContext.h"
 #include "OrcException.h"
-#include "OrcStdHeaders.h"
 
 #include <SDL3/SDL.h>
+
+#include <memory>
+#include <string>
 
 namespace Orc
 {

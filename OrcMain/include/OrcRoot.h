@@ -1,14 +1,12 @@
 #pragma once
 
-#include "OrcDefines.h"
-#include "OrcGraphicsDevice.h"
 #include "OrcManager.h"
-#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
+
+#include <memory>
 
 namespace Orc
 {
-    class ApplicationContext;
     class Root
     {
     public:
@@ -32,7 +30,5 @@ namespace Orc
 
         std::shared_ptr<GraphicsDevice> mDevice;
         std::shared_ptr<GraphicsCommandListManager> mGCLManager;
-
-        friend class ApplicationContext;
     };
 }

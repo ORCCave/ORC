@@ -1,6 +1,5 @@
 #include "OrcGraphicsFactory.h"
 #include "OrcRoot.h"
-#include "OrcStdHeaders.h"
 
 #include <SDL3/SDL_events.h>
 

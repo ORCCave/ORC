@@ -1,7 +1,7 @@
 #ifdef ORC_PLATFORM_WIN32
 #include "OrcD3D12Prerequisites.h"
 
-#include "OrcGraphicsCommandList.h"
+#include <memory>
 
 namespace Orc
 {

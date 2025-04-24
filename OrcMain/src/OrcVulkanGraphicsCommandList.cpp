@@ -1,7 +1,8 @@
 #ifdef ORC_USE_VULKAN
 #include "OrcVulkanPrerequisites.h"
 
-#include "OrcGraphicsCommandList.h"
+#include <memory>
+#include <vector>
 
 namespace Orc
 {

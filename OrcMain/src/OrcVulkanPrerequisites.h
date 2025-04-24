@@ -5,7 +5,6 @@
 #include "OrcGraphicsPrerequisites.h"
 
 #include "OrcGraphicsDevice.h"
-#include "OrcStdHeaders.h"
 #include "OrcTypes.h"
 
 #ifdef ORC_PLATFORM_WIN32
@@ -22,6 +21,8 @@
 
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
+
+#include <memory>
 
 namespace Orc
 {

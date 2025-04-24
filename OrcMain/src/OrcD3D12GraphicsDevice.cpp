@@ -3,6 +3,9 @@
 
 #include <SDL3/SDL.h>
 
+#include <memory>
+#include <vector>
+
 namespace Orc
 {
     class D3D12GraphicsDevice : public GraphicsDevice
