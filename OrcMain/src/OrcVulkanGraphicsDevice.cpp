@@ -12,7 +12,6 @@ namespace Orc
     bool checkValidation()
     {
         std::vector<vk::LayerProperties> properties = vk::enumerateInstanceLayerProperties();
-        std::vector<char const*> layers = { "VK_LAYER_KHRONOS_validation" };
         for (auto const& property : properties)
         {
             if (std::string(property.layerName.data()) ==  "VK_LAYER_KHRONOS_validation")
