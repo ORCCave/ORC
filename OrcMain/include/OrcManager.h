@@ -12,7 +12,7 @@ namespace Orc
 
         ORC_DISABLE_COPY_AND_MOVE(GraphicsCommandListManager)
     protected:
-        GraphicsCommandListManager() = default;
+        GraphicsCommandListManager(void* device) : mDevice(device) {}
         ~GraphicsCommandListManager() = default;
 
         void* mDevice;

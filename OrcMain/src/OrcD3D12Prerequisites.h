@@ -64,7 +64,7 @@ namespace Orc
     public:
         D3D12CommandList(GraphicsCommandListType type) : GraphicsCommandList(type) {}
 
-        uint64 mValue = 0;
+        uint64 mValue = 18446744073709551615;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);

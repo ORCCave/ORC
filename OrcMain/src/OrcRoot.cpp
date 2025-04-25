@@ -1,8 +1,8 @@
 #include "OrcRoot.h"
 
-#include "OrcGraphicsCommandList.h"
 #include "OrcGraphicsDevice.h"
 #include "OrcGraphicsFactory.h"
+#include "OrcManager.h"
 #include "OrcTypes.h"
 
 #include <SDL3/SDL_events.h>
@@ -11,6 +11,12 @@
 
 namespace Orc
 {
+    struct GraphicsCommandListManagerProxy : public GraphicsCommandListManager
+    {
+        GraphicsCommandListManagerProxy(GraphicsDevice* device) : GraphicsCommandListManager(device) {}
+        ~GraphicsCommandListManagerProxy() {}
+    };
+
     Root::Root(void* handle, uint32 w, uint32 h, GraphicsDevice::GraphicsDeviceType type) :
         mWindowHandle(handle), mWidthForSwapChain(w), mHeightForSwapChain(h), mGraphicsDeviceType(type)
     {
@@ -24,6 +30,8 @@ namespace Orc
 
     GraphicsCommandListManager* Root::getGraphicsCommandListManager()
     {
+        if (mGCLManager == nullptr)
+            mGCLManager = std::make_shared<GraphicsCommandListManagerProxy>(mDevice.get());
         return mGCLManager.get();
     }
 

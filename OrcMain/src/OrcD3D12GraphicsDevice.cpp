@@ -300,7 +300,7 @@ namespace Orc
         bool checkCmdListUsable(GraphicsCommandList* list)
         {
             auto type = list->getCommandListType();
-            uint64 realValue;
+            uint64 realValue = 0;
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
