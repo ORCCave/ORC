@@ -494,6 +494,11 @@ namespace Orc
 
         }
 
+        GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
+        {
+            return nullptr;
+        }
+
         vk::UniqueInstance mInstance;
         std::optional<uint32> mGraphicsFamily;
         std::optional<uint32> mComputeFamily;

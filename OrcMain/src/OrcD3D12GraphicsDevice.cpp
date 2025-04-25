@@ -290,6 +290,11 @@ namespace Orc
 
         }
 
+        GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
+        {
+            return nullptr;
+        }
+
     private:
         Microsoft::WRL::ComPtr<IDXGIAdapter4> mAdapter;
         Microsoft::WRL::ComPtr<ID3D12Debug> mDebugController;
