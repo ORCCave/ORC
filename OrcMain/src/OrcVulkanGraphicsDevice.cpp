@@ -481,6 +481,11 @@ namespace Orc
             return formats[0];
         }
 
+        bool checkCmdListUsable(GraphicsCommandList* list)
+        {
+            return false;
+        }
+
         vk::UniqueInstance mInstance;
         std::optional<uint32> mGraphicsFamily;
         std::optional<uint32> mComputeFamily;

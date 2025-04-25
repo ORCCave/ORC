@@ -275,6 +275,11 @@ namespace Orc
             static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
         }
 
+        bool checkCmdListUsable(GraphicsCommandList* list)
+        {
+            return false;
+        }
+
     private:
         Microsoft::WRL::ComPtr<IDXGIAdapter4> mAdapter;
         Microsoft::WRL::ComPtr<ID3D12Debug> mDebugController;

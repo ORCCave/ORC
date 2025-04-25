@@ -33,6 +33,8 @@ namespace Orc
         virtual void endDraw() = 0;
 
         virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
+        
+        virtual bool checkCmdListUsable(GraphicsCommandList* list) = 0;
 
         GraphicsDeviceType mGraphicsDeviceType;
 
