@@ -8,6 +8,8 @@
 
 #include <SDL3/SDL.h>
 
+#include <atomic>
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -16,7 +18,11 @@ namespace Orc
     class D3D12GraphicsDevice : public GraphicsDevice
     {
     public:
-        D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceType::GDT_D3D12)
+        D3D12GraphicsDevice(HWND hwnd, uint32 width, uint32 height) : GraphicsDevice(GraphicsDeviceType::GDT_D3D12),
+            mEvent(CreateEventW(nullptr, FALSE, FALSE, nullptr)),
+            mGraphicsEvent(CreateEventW(nullptr, FALSE, FALSE, nullptr)),
+            mCopyEvent(CreateEventW(nullptr, FALSE, FALSE, nullptr)),
+            mComputeEvent(CreateEventW(nullptr, FALSE, FALSE, nullptr))
         {
             if(mHD3D12 == NULL)
                 mHD3D12 = LoadLibraryW(L"d3d12.dll");
@@ -35,11 +41,9 @@ namespace Orc
             _createSwapChain(hwnd, width, height);
             mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
             CHECK_DX_RESULT(mDevice->CreateFence(mFenceValue[mFrameIndex]++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
-            mEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
+            CHECK_DX_RESULT(mDevice->CreateFence(mGraphicsFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mGraphicsFence)));
             CHECK_DX_RESULT(mDevice->CreateFence(mCopyFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mCopyFence)));
-            mCopyEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
             CHECK_DX_RESULT(mDevice->CreateFence(mComputeFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mComputeFence)));
-            mComputeEvent.Attach(CreateEventW(nullptr, FALSE, FALSE, nullptr));
 
             _createRTV();
 
@@ -207,20 +211,20 @@ namespace Orc
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                CHECK_DX_RESULT(mGraphicsQueue->Signal(mFence.Get(), mFenceValue[mFrameIndex]));
-                CHECK_DX_RESULT(mFence->SetEventOnCompletion(mFenceValue[mFrameIndex]++, mEvent.Get()));
-                if (WaitForSingleObjectEx(mEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
+                CHECK_DX_RESULT(mGraphicsQueue->Signal(mGraphicsFence.Get(), mGraphicsFenceValue));
+                CHECK_DX_RESULT(mGraphicsFence->SetEventOnCompletion(mGraphicsFenceValue++, mGraphicsEvent.Get()));
+                if (WaitForSingleObjectEx(mGraphicsEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
                     throw OrcException("WaitForSingleObjectEx failed");
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue);
-                mCopyFence->SetEventOnCompletion(mCopyFenceValue++, mCopyEvent.Get());
+                CHECK_DX_RESULT(mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue));
+                CHECK_DX_RESULT(mCopyFence->SetEventOnCompletion(mCopyFenceValue++, mCopyEvent.Get()));
                 if (WaitForSingleObjectEx(mCopyEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
                     throw OrcException("WaitForSingleObjectEx failed");
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue);
-                mComputeFence->SetEventOnCompletion(mComputeFenceValue++, mComputeEvent.Get());
+                CHECK_DX_RESULT(mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue));
+                CHECK_DX_RESULT(mComputeFence->SetEventOnCompletion(mComputeFenceValue++, mComputeEvent.Get()));
                 if (WaitForSingleObjectEx(mComputeEvent.Get(), INFINITE, FALSE) == WAIT_FAILED)
                     throw OrcException("WaitForSingleObjectEx failed");
                 break;
@@ -292,7 +296,19 @@ namespace Orc
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
         {
-            return nullptr;
+            auto listsCount = mListsCache.size();
+            for (size_t i = 0;i < listsCount; ++i)
+            {
+                bool expected = true;
+                if (mListsCache[i].mbUsable.compare_exchange_strong(expected, false))
+                {
+                    return mListsCache[i].mList.get();
+                }
+            }
+            auto temp = createCommandList(type);
+
+            // todo
+            return temp.get();
         }
 
     private:
@@ -312,10 +328,13 @@ namespace Orc
         Microsoft::WRL::ComPtr<ID3D12Fence1> mFence;
         Microsoft::WRL::Wrappers::Event mEvent;
 
-        uint64 mCopyFenceValue = 0;
+        std::atomic<uint64> mGraphicsFenceValue = 0;
+        Microsoft::WRL::ComPtr<ID3D12Fence1> mGraphicsFence;
+        Microsoft::WRL::Wrappers::Event mGraphicsEvent;
+        std::atomic<uint64> mCopyFenceValue = 0;
         Microsoft::WRL::ComPtr<ID3D12Fence1> mCopyFence;
         Microsoft::WRL::Wrappers::Event mCopyEvent;
-        uint64 mComputeFenceValue = 0;
+        std::atomic<uint64> mComputeFenceValue = 0;
         Microsoft::WRL::ComPtr<ID3D12Fence1> mComputeFence;
         Microsoft::WRL::Wrappers::Event mComputeEvent;
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
@@ -335,6 +354,13 @@ namespace Orc
         std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> mSwapChainRes;
         // CmdList Cache
 
+        struct ListCache
+        {
+            std::atomic_bool mbUsable;
+            std::shared_ptr<GraphicsCommandList> mList;
+        };
+
+        concurrency::concurrent_vector<ListCache> mListsCache;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)

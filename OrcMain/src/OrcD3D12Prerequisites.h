@@ -17,7 +17,10 @@
 
 #include <combaseapi.h>
 #include <comdef.h>
+#include <concurrent_vector.h>
 #include <libloaderapi.h>
+#include <wrl/client.h>
+#include <wrl/wrappers/corewrappers.h>
 
 //------------------------------------------------------------------------------
 // DirectX and WRL Headers
@@ -26,8 +29,6 @@
 #include "directx/dxgiformat.h"
 
 #include <dxgi1_6.h>
-#include <wrl/client.h>
-#include <wrl/wrappers/corewrappers.h>
 
 //------------------------------------------------------------------------------
 // Project Prerequisites
