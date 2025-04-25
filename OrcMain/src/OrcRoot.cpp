@@ -43,6 +43,8 @@ namespace Orc
                 break;
             mDevice->beginDraw();
             mDevice->endDraw();
+
+            mDevice->runGarbageCollection();
         }
     }
 }
