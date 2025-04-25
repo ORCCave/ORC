@@ -35,10 +35,10 @@ namespace Orc
         virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
         
         virtual bool checkCmdListUsable(GraphicsCommandList* list) = 0;
+        virtual void runGarbageCollection() = 0;
 
         GraphicsDeviceType mGraphicsDeviceType;
 
         friend class Root;
-        friend class GraphicsCommandListManager;
     };
 }

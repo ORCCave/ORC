@@ -280,6 +280,11 @@ namespace Orc
             return false;
         }
 
+        void runGarbageCollection()
+        {
+
+        }
+
     private:
         Microsoft::WRL::ComPtr<IDXGIAdapter4> mAdapter;
         Microsoft::WRL::ComPtr<ID3D12Debug> mDebugController;

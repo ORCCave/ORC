@@ -486,6 +486,11 @@ namespace Orc
             return false;
         }
 
+        void runGarbageCollection()
+        {
+
+        }
+
         vk::UniqueInstance mInstance;
         std::optional<uint32> mGraphicsFamily;
         std::optional<uint32> mComputeFamily;
