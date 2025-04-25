@@ -1,6 +1,7 @@
 #ifdef ORC_PLATFORM_WIN32
 #include "OrcD3D12Prerequisites.h"
 
+#include "OrcDefines.h"
 #include "OrcException.h"
 #include "OrcGraphicsCommandList.h"
 #include "OrcGraphicsDevice.h"
@@ -11,6 +12,7 @@
 #include <atomic>
 #include <cstddef>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace Orc
@@ -64,6 +66,8 @@ namespace Orc
             _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
             _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
             _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
+
+            mListsCache.clear();
         }
 
         void* getRawGraphicsDevice() const
@@ -236,18 +240,27 @@ namespace Orc
             auto tempList = reinterpret_cast<ID3D12CommandList*>(list->getRawCommandList());
             auto type = list->getCommandListType();
             ID3D12CommandList* tempLists[1] = { tempList };
+            uint64 currentValue = 0;
+            D3D12CommandList* realDX12List = static_cast<D3D12CommandList*>(list);
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
                 mGraphicsQueue->ExecuteCommandLists(1, tempLists);
+                currentValue = mGraphicsFenceValue++;
+                CHECK_DX_RESULT(mGraphicsQueue->Signal(mGraphicsFence.Get(), currentValue));
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 mCopyQueue->ExecuteCommandLists(1, tempLists);
+                currentValue = mCopyFenceValue++;
+                CHECK_DX_RESULT(mCopyQueue->Signal(mCopyFence.Get(), currentValue));
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
                 mComputeQueue->ExecuteCommandLists(1, tempLists);
+                currentValue = mComputeFenceValue++;
+                CHECK_DX_RESULT(mComputeQueue->Signal(mComputeFence.Get(), currentValue));
                 break;
             }
+            realDX12List->mValue = currentValue;
         }
 
         void _createRTV()
@@ -286,12 +299,33 @@ namespace Orc
 
         bool checkCmdListUsable(GraphicsCommandList* list)
         {
-            return false;
+            auto type = list->getCommandListType();
+            uint64 realValue;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                realValue = mGraphicsFence->GetCompletedValue();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                realValue = mCopyFence->GetCompletedValue();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                realValue = mComputeFence->GetCompletedValue();
+                break;
+            }
+            D3D12CommandList* realDX12List = static_cast<D3D12CommandList*>(list);
+            return realDX12List->mValue <= realValue ? true : false;
         }
 
         void runGarbageCollection()
         {
-
+            for (auto it = mListsCache.begin(); it != mListsCache.end(); ++it)
+            {
+                if (!it->mbUsable)
+                {
+                    it->mbUsable = checkCmdListUsable(it->mList.get());
+                }
+            }
         }
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
@@ -306,8 +340,7 @@ namespace Orc
                 }
             }
             auto temp = createCommandList(type);
-
-            // todo
+            mListsCache.push_back(ListCache(false, temp));
             return temp.get();
         }
 
@@ -356,8 +389,23 @@ namespace Orc
 
         struct ListCache
         {
+            ListCache(bool canUse, std::shared_ptr<GraphicsCommandList> list) : mbUsable(canUse), mList(list) {}
             std::atomic_bool mbUsable;
             std::shared_ptr<GraphicsCommandList> mList;
+
+            ListCache(ListCache&& other) noexcept
+                : mbUsable(other.mbUsable.load()), mList(std::move(other.mList)) {}
+            ListCache& operator=(ListCache&& other) noexcept
+            {
+                if (this != &other)
+                {
+                    mbUsable = other.mbUsable.load();
+                    mList = std::move(other.mList);
+                }
+                return *this;
+            }
+
+            ORC_DISABLE_COPY(ListCache)
         };
 
         concurrency::concurrent_vector<ListCache> mListsCache;

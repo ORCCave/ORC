@@ -59,6 +59,14 @@ namespace Orc
         }
     }
 
+    class D3D12CommandList : public GraphicsCommandList
+    {
+    public:
+        D3D12CommandList(GraphicsCommandListType type) : GraphicsCommandList(type) {}
+
+        uint64 mValue = 0;
+    };
+
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);
     std::shared_ptr<GraphicsCommandList> createD3D12CommandList(GraphicsDevice* device, GraphicsCommandList::GraphicsCommandListType type);
 }

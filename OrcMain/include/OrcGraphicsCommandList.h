@@ -26,8 +26,6 @@ namespace Orc
         GraphicsCommandList(GraphicsCommandListType type) : mType(type) {}
         virtual ~GraphicsCommandList() = default;
 
-        bool mIsUsable = true;
-
         GraphicsCommandListType mType;
     };
 }

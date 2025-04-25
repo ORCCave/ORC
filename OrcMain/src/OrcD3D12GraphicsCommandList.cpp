@@ -8,10 +8,10 @@
 
 namespace Orc
 {
-    class D3D12GraphicsCommandList : public GraphicsCommandList
+    class D3D12GraphicsCommandList : public D3D12CommandList
     {
     public:
-        D3D12GraphicsCommandList(GraphicsDevice* device, GraphicsCommandListType type) : GraphicsCommandList(type)
+        D3D12GraphicsCommandList(GraphicsDevice* device, GraphicsCommandListType type) : D3D12CommandList(type)
         {
             auto d3d12Device = static_cast<ID3D12Device4*>(device->getRawGraphicsDevice());
             D3D12_COMMAND_LIST_TYPE d3d12Type = D3D12_COMMAND_LIST_TYPE_DIRECT;

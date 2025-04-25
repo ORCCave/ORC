@@ -6,3 +6,7 @@
     ClassName(ClassName&&) = delete;                 \
     ClassName& operator=(ClassName&&) = delete;
 
+#define ORC_DISABLE_COPY(ClassName)                  \
+    ClassName(const ClassName&) = delete;            \
+    ClassName& operator=(const ClassName&) = delete; 
+
