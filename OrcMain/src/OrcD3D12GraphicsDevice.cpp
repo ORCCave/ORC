@@ -318,6 +318,8 @@ namespace Orc
         bool mEnhancedBarriersSupported;
 
         std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> mSwapChainRes;
+        // CmdList Cache
+
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)

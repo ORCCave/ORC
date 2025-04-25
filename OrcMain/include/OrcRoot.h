@@ -4,6 +4,7 @@
 #include "OrcTypes.h"
 
 #include <memory>
+#include <vector>
 
 namespace Orc
 {
@@ -30,5 +31,7 @@ namespace Orc
 
         std::shared_ptr<GraphicsDevice> mDevice;
         std::shared_ptr<GraphicsCommandListManager> mGCLManager;
+
+        std::vector<std::shared_ptr<GraphicsCommandList>> mLists;
     };
 }

@@ -7,11 +7,6 @@
 
 namespace Orc
 {
-    struct GraphicsCommandListManagerProxy : public GraphicsCommandListManager
-    {
-        GraphicsCommandListManagerProxy(std::shared_ptr<GraphicsDevice> device) : GraphicsCommandListManager(device) {}
-    };
-
     Root::Root(void* handle, uint32 w, uint32 h, GraphicsDevice::GraphicsDeviceType type) :
         mWindowHandle(handle), mWidthForSwapChain(w), mHeightForSwapChain(h), mGraphicsDeviceType(type)
     {
@@ -25,10 +20,6 @@ namespace Orc
 
     GraphicsCommandListManager* Root::getGraphicsCommandListManager()
     {
-        if (!mGCLManager)
-        {
-            mGCLManager = std::make_shared<GraphicsCommandListManagerProxy>(mDevice);
-        }
         return mGCLManager.get();
     }
 
@@ -52,12 +43,6 @@ namespace Orc
                 break;
             mDevice->beginDraw();
             mDevice->endDraw();
-
-            if (mGCLManager)
-            {
-                mGCLManager->releaseCommandList();
-            }
-
         }
     }
 }

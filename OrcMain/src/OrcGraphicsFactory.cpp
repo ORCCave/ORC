@@ -8,7 +8,6 @@ namespace Orc
     std::shared_ptr<GraphicsDevice> createGraphicsDeviceByType(void* windowHandle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type)
     {
         std::shared_ptr<GraphicsDevice> device;
-
         switch (type)
         {
 #ifdef ORC_PLATFORM_WIN32
@@ -24,7 +23,6 @@ namespace Orc
         default:
             break;
         }
-
         return device;
     }
 }
