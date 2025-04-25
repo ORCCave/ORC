@@ -1,5 +1,9 @@
-#include "OrcGraphicsFactory.h"
 #include "OrcRoot.h"
+
+#include "OrcGraphicsCommandList.h"
+#include "OrcGraphicsDevice.h"
+#include "OrcGraphicsFactory.h"
+#include "OrcTypes.h"
 
 #include <SDL3/SDL_events.h>
 

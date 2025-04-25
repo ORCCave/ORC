@@ -32,9 +32,11 @@
 //------------------------------------------------------------------------------
 // Project Prerequisites
 //------------------------------------------------------------------------------
-#include "OrcException.h"
-#include "OrcGraphicsDevice.h"
 #include "OrcGraphicsPrerequisites.h"
+
+#include "OrcException.h"
+#include "OrcGraphicsCommandList.h"
+#include "OrcGraphicsDevice.h"
 #include "OrcTypes.h"
 
 #include <format>

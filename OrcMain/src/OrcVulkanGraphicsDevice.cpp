@@ -1,7 +1,10 @@
 #ifdef ORC_USE_VULKAN
 #include "OrcVulkanPrerequisites.h"
 
+#include "OrcGraphicsDevice.h"
+
 #include "OrcException.h"
+#include "OrcGraphicsCommandList.h"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>

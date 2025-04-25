@@ -4,6 +4,7 @@
 
 #include "OrcGraphicsPrerequisites.h"
 
+#include "OrcGraphicsCommandList.h"
 #include "OrcGraphicsDevice.h"
 #include "OrcTypes.h"
 

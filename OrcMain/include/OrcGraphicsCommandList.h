@@ -4,7 +4,6 @@
 
 namespace Orc
 {
-    class GraphicsCommandListManager;
     class GraphicsCommandList
     {
     public:
@@ -30,7 +29,5 @@ namespace Orc
         bool mIsUsable = true;
 
         GraphicsCommandListType mType;
-
-        friend class GraphicsCommandListManager;
     };
 }

@@ -1,6 +1,10 @@
 #ifdef ORC_USE_VULKAN
 #include "OrcVulkanPrerequisites.h"
 
+#include "OrcGraphicsCommandList.h"
+
+#include "OrcGraphicsDevice.h"
+
 #include <memory>
 #include <vector>
 

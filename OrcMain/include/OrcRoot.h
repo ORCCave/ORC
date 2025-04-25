@@ -1,5 +1,8 @@
 #pragma once
 
+#include "OrcDefines.h"
+#include "OrcGraphicsCommandList.h"
+#include "OrcGraphicsDevice.h"
 #include "OrcManager.h"
 #include "OrcTypes.h"
 

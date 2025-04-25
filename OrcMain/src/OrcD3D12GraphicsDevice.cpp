@@ -1,6 +1,11 @@
 #ifdef ORC_PLATFORM_WIN32
 #include "OrcD3D12Prerequisites.h"
 
+#include "OrcException.h"
+#include "OrcGraphicsCommandList.h"
+#include "OrcGraphicsDevice.h"
+#include "OrcTypes.h"
+
 #include <SDL3/SDL.h>
 
 #include <memory>

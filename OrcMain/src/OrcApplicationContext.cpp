@@ -1,5 +1,9 @@
 #include "OrcApplicationContext.h"
+
 #include "OrcException.h"
+#include "OrcGraphicsDevice.h"
+#include "OrcRoot.h"
+#include "OrcTypes.h"
 
 #include <SDL3/SDL.h>
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "OrcGraphicsDevice.h"
+#include "OrcDefines.h"
+#include "OrcGraphicsCommandList.h"
 
 namespace Orc
 {
@@ -13,5 +14,7 @@ namespace Orc
     protected:
         GraphicsCommandListManager() = default;
         ~GraphicsCommandListManager() = default;
+
+        void* mDevice;
     };
 }

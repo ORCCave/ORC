@@ -1,13 +1,14 @@
 #pragma once
 
+#include "OrcDefines.h"
 #include "OrcGraphicsCommandList.h"
 
 #include <memory>
 
 namespace Orc
 {
-    class Root;
     class GraphicsCommandListManager;
+    class Root;
     class GraphicsDevice
     {
     public:
@@ -32,13 +33,13 @@ namespace Orc
         virtual void beginDraw() = 0;
         virtual void endDraw() = 0;
 
-        virtual std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type) = 0;
+        virtual GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type) = 0;
         
-        virtual bool checkCmdListUsable(GraphicsCommandList* list) = 0;
         virtual void runGarbageCollection() = 0;
 
         GraphicsDeviceType mGraphicsDeviceType;
 
+        friend class GraphicsCommandListManager;
         friend class Root;
     };
 }
