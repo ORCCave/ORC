@@ -189,6 +189,10 @@ namespace Orc
             executeCommandList(mGraphicsList[mFrameIndex].get());
             CHECK_DX_RESULT(mSwapChain->Present(1, 0));
             moveToNextFrame();
+
+            CHECK_DX_RESULT(mGraphicsQueue->Signal(mGraphicsFence.Get(), mGraphicsFenceValue - 1));
+            CHECK_DX_RESULT(mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue - 1));
+            CHECK_DX_RESULT(mComputeQueue->Signal(mComputeFence.Get(), mComputeFenceValue - 1));
         }
 
         void moveToNextFrame()
@@ -240,27 +244,22 @@ namespace Orc
             auto tempList = reinterpret_cast<ID3D12CommandList*>(list->getRawCommandList());
             auto type = list->getCommandListType();
             ID3D12CommandList* tempLists[1] = { tempList };
-            uint64 currentValue = 0;
             D3D12CommandList* realDX12List = static_cast<D3D12CommandList*>(list);
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
                 mGraphicsQueue->ExecuteCommandLists(1, tempLists);
-                currentValue = mGraphicsFenceValue++;
-                CHECK_DX_RESULT(mGraphicsQueue->Signal(mGraphicsFence.Get(), currentValue));
+                realDX12List->mValue = mGraphicsFenceValue++;
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
                 mCopyQueue->ExecuteCommandLists(1, tempLists);
-                currentValue = mCopyFenceValue++;
-                CHECK_DX_RESULT(mCopyQueue->Signal(mCopyFence.Get(), currentValue));
+                realDX12List->mValue = mCopyFenceValue++;
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
                 mComputeQueue->ExecuteCommandLists(1, tempLists);
-                currentValue = mComputeFenceValue++;
-                CHECK_DX_RESULT(mComputeQueue->Signal(mComputeFence.Get(), currentValue));
+                realDX12List->mValue = mComputeFenceValue++;
                 break;
             }
-            realDX12List->mValue = currentValue;
         }
 
         void _createRTV()
