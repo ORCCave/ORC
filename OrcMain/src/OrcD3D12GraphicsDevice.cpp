@@ -332,18 +332,8 @@ namespace Orc
             {
                 if (!(*it)->mbUsable)
                 {
-                    if (cacheSize >= maxCacheSize)
-                    {
-                        mUnusableListsCache.push_back(*it);
-                    }
                     updateCmdListUsable(it->get());
                 }
-            }
-
-            if (cacheSize >= maxCacheSize)
-            {
-                mListsCache.swap(mUnusableListsCache);
-                mUnusableListsCache.clear();
             }
         }
 
@@ -359,9 +349,8 @@ namespace Orc
                 }
             }
 
-            auto temp = std::dynamic_pointer_cast<D3D12CommandList>(createCommandList(type));
-            mListsCache.push_back(temp);
-            return temp.get();
+            auto it = mListsCache.push_back(std::dynamic_pointer_cast<D3D12CommandList>(createCommandList(type)));
+            return it->get();
         }
 
     private:
