@@ -40,7 +40,9 @@
 #include "OrcGraphicsDevice.h"
 #include "OrcTypes.h"
 
+#include <atomic>
 #include <format>
+#include <limits>
 #include <memory>
 #include <string>
 
@@ -64,7 +66,8 @@ namespace Orc
     public:
         D3D12CommandList(GraphicsCommandListType type) : GraphicsCommandList(type) {}
 
-        uint64 mValue = 18446744073709551615;
+        uint64 mValue = std::numeric_limits<uint64>::max();
+        std::atomic_bool mbUsable = false;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);

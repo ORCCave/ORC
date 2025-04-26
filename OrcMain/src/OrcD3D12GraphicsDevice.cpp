@@ -68,6 +68,7 @@ namespace Orc
             _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
 
             mListsCache.clear();
+            mUnusableListsCache.clear();
         }
 
         void* getRawGraphicsDevice() const
@@ -296,7 +297,7 @@ namespace Orc
             static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
         }
 
-        bool checkCmdListUsable(GraphicsCommandList* list)
+        void updateCmdListUsable(D3D12CommandList* list)
         {
             auto type = list->getCommandListType();
             uint64 realValue = 0;
@@ -312,18 +313,37 @@ namespace Orc
                 realValue = mComputeFence->GetCompletedValue();
                 break;
             }
-            D3D12CommandList* realDX12List = static_cast<D3D12CommandList*>(list);
-            return realDX12List->mValue <= realValue ? true : false;
+            if (list->mValue <= realValue)
+            {
+                list->mbUsable = true;
+            }
+            else
+            {
+                list->mbUsable = false;
+            }
         }
 
         void runGarbageCollection()
         {
+            constexpr size_t maxCacheSize = 100;
+            const size_t cacheSize = mListsCache.size();
+
             for (auto it = mListsCache.begin(); it != mListsCache.end(); ++it)
             {
-                if (!it->mbUsable)
+                if (!(*it)->mbUsable)
                 {
-                    it->mbUsable = checkCmdListUsable(it->mList.get());
+                    if (cacheSize >= maxCacheSize)
+                    {
+                        mUnusableListsCache.push_back(*it);
+                    }
+                    updateCmdListUsable(it->get());
                 }
+            }
+
+            if (cacheSize >= maxCacheSize)
+            {
+                mListsCache.swap(mUnusableListsCache);
+                mUnusableListsCache.clear();
             }
         }
 
@@ -333,13 +353,14 @@ namespace Orc
             for (size_t i = 0;i < listsCount; ++i)
             {
                 bool expected = true;
-                if (mListsCache[i].mbUsable.compare_exchange_strong(expected, false))
+                if (mListsCache[i]->mbUsable.compare_exchange_strong(expected, false))
                 {
-                    return mListsCache[i].mList.get();
+                    return mListsCache[i].get();
                 }
             }
-            auto temp = createCommandList(type);
-            mListsCache.push_back(ListCache(false, temp));
+
+            auto temp = std::dynamic_pointer_cast<D3D12CommandList>(createCommandList(type));
+            mListsCache.push_back(temp);
             return temp.get();
         }
 
@@ -385,29 +406,8 @@ namespace Orc
 
         std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> mSwapChainRes;
         // CmdList Cache
-
-        struct ListCache
-        {
-            ListCache(bool canUse, std::shared_ptr<GraphicsCommandList> list) : mbUsable(canUse), mList(list) {}
-            std::atomic_bool mbUsable;
-            std::shared_ptr<GraphicsCommandList> mList;
-
-            ListCache(ListCache&& other) noexcept
-                : mbUsable(other.mbUsable.load()), mList(std::move(other.mList)) {}
-            ListCache& operator=(ListCache&& other) noexcept
-            {
-                if (this != &other)
-                {
-                    mbUsable = other.mbUsable.load();
-                    mList = std::move(other.mList);
-                }
-                return *this;
-            }
-
-            ORC_DISABLE_COPY(ListCache)
-        };
-
-        concurrency::concurrent_vector<ListCache> mListsCache;
+        concurrency::concurrent_vector<std::shared_ptr<D3D12CommandList>> mListsCache;
+        concurrency::concurrent_vector<std::shared_ptr<D3D12CommandList>> mUnusableListsCache;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
