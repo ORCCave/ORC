@@ -17,7 +17,7 @@
 
 #include <combaseapi.h>
 #include <comdef.h>
-#include <concurrent_vector.h>
+#include <concurrent_queue.h>
 #include <libloaderapi.h>
 #include <wrl/client.h>
 #include <wrl/wrappers/corewrappers.h>
@@ -40,7 +40,6 @@
 #include "OrcGraphicsDevice.h"
 #include "OrcTypes.h"
 
-#include <atomic>
 #include <format>
 #include <limits>
 #include <memory>
@@ -65,13 +64,7 @@ namespace Orc
     {
     public:
         D3D12CommandList(GraphicsCommandListType type) : GraphicsCommandList(type) {}
-        void SetUnusable()
-        {
-            uint64 mValue = std::numeric_limits<uint64>::max();
-            mbUsable.store(false);
-        }
         uint64 mValue = std::numeric_limits<uint64>::max();
-        std::atomic_bool mbUsable = false;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* hwnd, uint32 width, uint32 height);
