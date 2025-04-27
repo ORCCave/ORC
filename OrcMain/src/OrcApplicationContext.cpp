@@ -36,17 +36,7 @@ namespace Orc
         SDL_WindowFlags windowFlags = 0;
         if (type == GraphicsDevice::GraphicsDeviceType::GDT_VULKAN)
             windowFlags = SDL_WINDOW_VULKAN;
-
-#ifdef ORC_PLATFORM_LINUX
-        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11");
-        if (!SDL_Init(SDL_INIT_VIDEO))
-        {
-            SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "wayland");
-            if (!SDL_Init(SDL_INIT_VIDEO)) throw OrcException(SDL_GetError());
-        }
-#else
         if (!SDL_Init(SDL_INIT_VIDEO)) throw OrcException(SDL_GetError());
-#endif
         mWindowHandle = createWindow(mWindowTitle.c_str(), mWidth, mHeight, windowFlags);
         if (!mWindowHandle)
         {
