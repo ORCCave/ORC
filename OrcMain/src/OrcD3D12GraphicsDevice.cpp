@@ -336,26 +336,27 @@ namespace Orc
             auto computeValue = mComputeFence->GetCompletedValue();
 
             int32 keepIdle = maxCacheSize / 2;
-            for (auto& sp : mListsCache)
+            for (auto sp : mListsCache)
             {
+                updateCmdListUsable(sp.get(), graphicsValue, copyValue, computeValue);
                 if (!sp->mbUsable)
                 {
-                    updateCmdListUsable(sp.get(), graphicsValue, copyValue, computeValue);
-                    newCache.push_back(sp);
+                    mUnusableListsCache.push_back(sp);
                 }
                 else if (keepIdle-- > 0)
                 {
-                    newCache.push_back(sp);
+                    mUnusableListsCache.push_back(sp);
                 }
             }
 
-            mListsCache.swap(newCache);
+            mListsCache.swap(mUnusableListsCache);
+            mUnusableListsCache.clear();
         }
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
         {
             auto listsCount = mListsCache.size();
-            for (size_t i = 0;i < listsCount; ++i)
+            for (size_t i = 0; i < listsCount; ++i)
             {
                 bool expected = true;
                 if (mListsCache[i]->mbUsable.compare_exchange_strong(expected, false))
@@ -365,6 +366,8 @@ namespace Orc
             }
 
             auto temp = std::dynamic_pointer_cast<D3D12CommandList>(createCommandList(type));
+            // Initialize the atomic variable in SetUnusable, otherwise the program may crash. I can't understand.
+            temp->SetUnusable();
             mListsCache.push_back(temp);
             return temp.get();
         }
