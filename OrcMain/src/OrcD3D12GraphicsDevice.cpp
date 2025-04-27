@@ -115,7 +115,7 @@ namespace Orc
         void _createSwapChain(HWND hwnd, uint32 width, uint32 height)
         {
             DXGI_SWAP_CHAIN_DESC1 scDesc{};
-            scDesc.BufferCount = 3;
+            scDesc.BufferCount = ORC_SWAPCHAIN_COUNT;
             scDesc.Width = width;
             scDesc.Height = height;
             scDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
