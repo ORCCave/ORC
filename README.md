@@ -7,7 +7,7 @@ ORC (Object-Oriented Rendering Component)
 
 | Platform | Supported APIs                  |
 |----------|---------------------------------|
-| Windows  | DX12, Vulkan (optional)         |
+| Windows  | DX12, Vulkan                    |
 | Linux    | Vulkan                          |
 
 
