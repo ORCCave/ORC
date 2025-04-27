@@ -297,20 +297,20 @@ namespace Orc
             static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
         }
 
-        void updateCmdListUsable(D3D12CommandList* list)
+        void updateCmdListUsable(D3D12CommandList* list, uint64 graphicsValue, uint64 copyValue, uint64 computeValue)
         {
             auto type = list->getCommandListType();
             uint64 realValue = 0;
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                realValue = mGraphicsFence->GetCompletedValue();
+                realValue = graphicsValue;
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                realValue = mCopyFence->GetCompletedValue();
+                realValue = copyValue;
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                realValue = mComputeFence->GetCompletedValue();
+                realValue = computeValue;
                 break;
             }
             if (list->mValue <= realValue)
@@ -331,13 +331,16 @@ namespace Orc
                 return;
 
             concurrency::concurrent_vector<std::shared_ptr<D3D12CommandList>> newCache;
+            auto graphicsValue = mGraphicsFence->GetCompletedValue();
+            auto copyValue = mCopyFence->GetCompletedValue();
+            auto computeValue = mComputeFence->GetCompletedValue();
 
             int32 keepIdle = maxCacheSize / 2;
             for (auto& sp : mListsCache)
             {
-                if (!sp->mbUsable.load())
+                if (!sp->mbUsable)
                 {
-                    updateCmdListUsable(sp.get());
+                    updateCmdListUsable(sp.get(), graphicsValue, copyValue, computeValue);
                     newCache.push_back(sp);
                 }
                 else if (keepIdle-- > 0)
@@ -361,8 +364,9 @@ namespace Orc
                 }
             }
 
-            auto it = mListsCache.push_back(std::dynamic_pointer_cast<D3D12CommandList>(createCommandList(type)));
-            return it->get();
+            auto temp = std::dynamic_pointer_cast<D3D12CommandList>(createCommandList(type));
+            mListsCache.push_back(temp);
+            return temp.get();
         }
 
     private:
