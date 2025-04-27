@@ -315,26 +315,38 @@ namespace Orc
             }
             if (list->mValue <= realValue)
             {
-                list->mbUsable = true;
+                list->mbUsable.store(true);
             }
             else
             {
-                list->mbUsable = false;
+                list->mbUsable.store(false);
             }
         }
 
         void runGarbageCollection()
         {
             constexpr size_t maxCacheSize = 100;
-            const size_t cacheSize = mListsCache.size();
+            size_t cacheSize = mListsCache.size();
+            if (cacheSize <= maxCacheSize)
+                return;
 
-            for (auto it = mListsCache.begin(); it != mListsCache.end(); ++it)
+            concurrency::concurrent_vector<std::shared_ptr<D3D12CommandList>> newCache;
+
+            int32 keepIdle = maxCacheSize / 2;
+            for (auto& sp : mListsCache)
             {
-                if (!(*it)->mbUsable)
+                if (!sp->mbUsable.load())
                 {
-                    updateCmdListUsable(it->get());
+                    updateCmdListUsable(sp.get());
+                    newCache.push_back(sp);
+                }
+                else if (keepIdle-- > 0)
+                {
+                    newCache.push_back(sp);
                 }
             }
+
+            mListsCache.swap(newCache);
         }
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
