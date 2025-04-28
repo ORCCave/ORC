@@ -4,7 +4,7 @@ file(GLOB_RECURSE ORC_HEADER_FILES CONFIGURE_DEPENDS *.h)
 add_library(OrcMain STATIC ${ORC_SOURCE_FILES} ${ORC_HEADER_FILES})
 
 target_include_directories(OrcMain PUBLIC "include")
-target_link_libraries(OrcMain PRIVATE SDL3::SDL3)
+target_link_libraries(OrcMain PRIVATE SDL2::SDL2)
 
 if(WIN32)
     find_package(Vulkan)

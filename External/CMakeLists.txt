@@ -1,15 +1,15 @@
 include(FetchContent)
 
 if(WIN32)
-    set(SDL_SHARED OFF)
-    set(SDL_STATIC ON)
     FetchContent_Declare(
-        SDL3
-         https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-3.2.10
+        SDL2
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-2.32.4
         EXCLUDE_FROM_ALL
     )
-    FetchContent_MakeAvailable(SDL3)
+    set(SDL_SHARED OFF)
+    set(SDL_STATIC ON)
+    FetchContent_MakeAvailable(SDL2)
 
     FetchContent_Declare(
         DirectX-Headers
@@ -21,5 +21,5 @@ if(WIN32)
 endif()
 
 if(UNIX AND NOT APPLE)
-    find_package(SDL REQUIRED)
+    find_package(SDL2 REQUIRED)
 endif()

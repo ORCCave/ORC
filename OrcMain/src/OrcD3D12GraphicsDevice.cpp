@@ -7,7 +7,8 @@
 #include "OrcGraphicsDevice.h"
 #include "OrcTypes.h"
 
-#include <SDL3/SDL.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 
 #include <atomic>
 #include <cstddef>
@@ -410,10 +411,11 @@ namespace Orc
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
     {
-        auto props = SDL_GetWindowProperties(static_cast<SDL_Window*>(windowHandle));
-        if (!props) throw OrcException(SDL_GetError());
-        auto hwnd = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
-        if (!hwnd) throw OrcException(SDL_GetError());
+        SDL_SysWMinfo wmInfo;
+        SDL_VERSION(&wmInfo.version);
+        if (!SDL_GetWindowWMInfo(static_cast<SDL_Window*>(windowHandle), &wmInfo))
+            throw OrcException(SDL_GetError());
+        HWND hwnd = wmInfo.info.win.window;
         return std::make_shared<D3D12GraphicsDevice>((HWND)hwnd, width, height);
     }
 }

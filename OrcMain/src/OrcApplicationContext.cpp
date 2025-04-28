@@ -5,7 +5,7 @@
 #include "OrcRoot.h"
 #include "OrcTypes.h"
 
-#include <SDL3/SDL.h>
+#include <SDL2/SDL.h>
 
 #include <memory>
 #include <string>
@@ -18,9 +18,9 @@ namespace Orc
         RootProxy(void* handle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type) : Root(handle, width, height, type) {}
     };
 
-    std::shared_ptr<void> createWindow(const char* title, int w, int h, SDL_WindowFlags flags)
+    std::shared_ptr<void> createWindow(const char* title, int w, int h, uint32 flags)
     {
-        return std::shared_ptr<void>(SDL_CreateWindow(title, w, h, flags), [](void* ptr) {SDL_DestroyWindow(static_cast<SDL_Window*>(ptr));});
+        return std::shared_ptr<void>(SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, flags), [](void* ptr) {SDL_DestroyWindow(static_cast<SDL_Window*>(ptr));});
     }
 
     class ApplicationContext::impl
@@ -33,11 +33,15 @@ namespace Orc
     ApplicationContext::ApplicationContext(const std::string& windowTitle, uint32 width, uint32 height, GraphicsDevice::GraphicsDeviceType type)
         : mWindowTitle(windowTitle), mWidth(width), mHeight(height)
     {
-        SDL_WindowFlags windowFlags = 0;
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) throw OrcException(SDL_GetError());
         if (type == GraphicsDevice::GraphicsDeviceType::GDT_VULKAN)
-            windowFlags = SDL_WINDOW_VULKAN;
-        if (!SDL_Init(SDL_INIT_VIDEO)) throw OrcException(SDL_GetError());
-        mWindowHandle = createWindow(mWindowTitle.c_str(), mWidth, mHeight, windowFlags);
+        {
+            mWindowHandle = createWindow(mWindowTitle.c_str(), mWidth, mHeight, SDL_WINDOW_VULKAN);
+        }
+        else
+        {
+            mWindowHandle = createWindow(mWindowTitle.c_str(), mWidth, mHeight, 0);
+        }
         if (!mWindowHandle)
         {
             SDL_Quit();

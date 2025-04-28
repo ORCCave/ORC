@@ -5,7 +5,7 @@
 #include "OrcManager.h"
 #include "OrcTypes.h"
 
-#include <SDL3/SDL_events.h>
+#include <SDL2/SDL_events.h>
 
 #include <memory>
 
@@ -44,7 +44,7 @@ namespace Orc
         {
             while (SDL_PollEvent(&event))
             {
-                if (event.type == SDL_EVENT_QUIT)
+                if (event.type == SDL_QUIT)
                 {
                     running = false;
                     break;

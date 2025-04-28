@@ -6,8 +6,8 @@
 #include "OrcException.h"
 #include "OrcGraphicsCommandList.h"
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_vulkan.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 
 #include <algorithm>
 #include <cstring>
@@ -35,13 +35,13 @@ namespace Orc
         {
             VulkanSurfaceWrapper(vk::Instance instance, SDL_Window* window) : mTempInst(instance)
             {
-                if (!SDL_Vulkan_CreateSurface(window, instance, nullptr, &mSurface)) 
+                if (!SDL_Vulkan_CreateSurface(window, instance, &mSurface)) 
                     throw OrcException(SDL_GetError());
             }
 
             ~VulkanSurfaceWrapper()
             {
-                SDL_Vulkan_DestroySurface(mTempInst, mSurface, nullptr);
+                vkDestroySurfaceKHR(mTempInst, mSurface, nullptr);
             }
 
             vk::Instance mTempInst;
@@ -59,7 +59,7 @@ namespace Orc
         {
             mWidth = width;
             mHeight = height;
-            _createInstance();
+            _createInstance(window);
             mSurfaceWrapper = std::make_unique<VulkanSurfaceWrapper>(mInstance.get(), window);
             _createPhysicalDevice();
             _createDevice();
@@ -80,12 +80,14 @@ namespace Orc
             mSurfaceWrapper.reset();
         }
 
-        void _createInstance()
+        void _createInstance(SDL_Window* window)
         {
             uint32 count_instance_extensions;
-            const char* const* instance_extensions = SDL_Vulkan_GetInstanceExtensions(&count_instance_extensions);
-            if (instance_extensions == nullptr) { throw OrcException(SDL_GetError()); }
-            std::vector<const char*> extensions(instance_extensions, instance_extensions + count_instance_extensions);
+            if(!SDL_Vulkan_GetInstanceExtensions(window, &count_instance_extensions, nullptr))
+                throw OrcException(SDL_GetError());
+            std::vector<const char*> extensions(count_instance_extensions);
+            if (!SDL_Vulkan_GetInstanceExtensions(window, &count_instance_extensions, extensions.data()))
+                throw OrcException(SDL_GetError());
             std::vector<const char*> layers;
 #ifndef NDEBUG
             auto instanceLayerProperties = vk::enumerateInstanceLayerProperties();
