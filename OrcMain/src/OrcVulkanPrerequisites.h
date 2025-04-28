@@ -27,6 +27,17 @@
 
 namespace Orc
 {
+    class VulkanCommandList : public GraphicsCommandList
+    {
+    public:
+        VulkanCommandList(GraphicsDevice* device,GraphicsCommandListType type) : GraphicsCommandList(type)
+        {
+            vk::Device realdevice = static_cast<VkDevice>(device->getRawGraphicsDevice());
+            mFence = realdevice.createFenceUnique(vk::FenceCreateInfo());
+        }
+        vk::UniqueFence mFence;
+    };
+
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
     std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type);
 }

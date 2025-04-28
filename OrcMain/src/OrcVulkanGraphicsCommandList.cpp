@@ -10,11 +10,11 @@
 
 namespace Orc
 {
-    class VulkanGraphicsCommandList : public GraphicsCommandList
+    class VulkanGraphicsCommandList : public VulkanCommandList
     {
     public:
         VulkanGraphicsCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandListType type)
-            : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool), GraphicsCommandList(type)
+            : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool), VulkanCommandList(device, type)
         {
             vk::CommandBufferAllocateInfo allocInfo
             {

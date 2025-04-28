@@ -13,9 +13,11 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <optional>
-#include <vector>
+#include <queue>
 #include <string>
+#include <vector>
 
 namespace Orc
 {
@@ -439,13 +441,13 @@ namespace Orc
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                mGraphicsQueue.submit(submitInfo);
+                mGraphicsQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                mTransferQueue.submit(submitInfo);
+                mTransferQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                mComputeQueue.submit(submitInfo);
+                mComputeQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
                 break;
             }
         }
@@ -486,19 +488,107 @@ namespace Orc
             return formats[0];
         }
 
-        bool checkCmdListUsable(GraphicsCommandList* list)
+        bool checkCmdListUsable(VulkanCommandList* list)
         {
+            auto result = mDevice->getFenceStatus(list->mFence.get());
+            if (result == vk::Result::eSuccess)
+            {
+                mDevice->resetFences(list->mFence.get());
+                return true;
+            }
+            else if (result != vk::Result::eNotReady)
+            {
+                throw OrcException("Fence check failed");
+            }
+
             return false;
         }
 
         void runGarbageCollection()
         {
+            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
+            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
+        }
 
+        void _clearLists(GraphicsCommandList::GraphicsCommandListType type)
+        {
+            std::queue<std::shared_ptr<VulkanCommandList>>* realLists = nullptr;
+            std::queue<std::shared_ptr<VulkanCommandList>>* realUnusableLists = nullptr;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                realLists = &mGActiveLists;
+                realUnusableLists = &mGUnusableListsCache;
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                realLists = &mCopyActiveLists;
+                realUnusableLists = &mCopyUnusableListsCache;
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                realLists = &mComputeActiveLists;
+                realUnusableLists = &mComputeUnusableListsCache;
+                break;
+            }
+            size_t unusableCount = realUnusableLists->size();
+            size_t loopCount = 0;
+            while (loopCount < unusableCount)
+            {
+                auto sp = realUnusableLists->front();
+                realUnusableLists->pop();
+                if (checkCmdListUsable(sp.get()))
+                {
+                    realLists->push(sp);
+                }
+                else
+                {
+                    realUnusableLists->push(sp);
+                }
+                ++loopCount;
+            }
+
+            constexpr size_t maxCacheSize = 100;
+            const size_t cacheSize = realLists->size();
+            if (cacheSize > maxCacheSize)
+            {
+                std::queue<std::shared_ptr<VulkanCommandList>> empty_queue;
+                realLists->swap(empty_queue);
+            }
         }
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
         {
-            return nullptr;
+            std::queue<std::shared_ptr<VulkanCommandList>>* realLists = nullptr;
+            std::queue<std::shared_ptr<VulkanCommandList>>* realUnusableLists = nullptr;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                realLists = &mGActiveLists;
+                realUnusableLists = &mGUnusableListsCache;
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                realLists = &mCopyActiveLists;
+                realUnusableLists = &mCopyUnusableListsCache;
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                realLists = &mComputeActiveLists;
+                realUnusableLists = &mComputeUnusableListsCache;
+                break;
+            }
+
+            std::shared_ptr<VulkanCommandList> sp;
+            std::lock_guard guard(mListMutex);
+            if (!realLists->empty())
+            {
+                auto sp = realLists->front();
+                realLists->pop();
+                realUnusableLists->push(sp);
+                return sp.get();
+            }
+
+            auto list = std::dynamic_pointer_cast<VulkanCommandList>(createCommandList(type));
+            realUnusableLists->push(list);
+            return list.get();
         }
 
         vk::UniqueInstance mInstance;
@@ -541,6 +631,14 @@ namespace Orc
         uint32 mHeight;
 
         std::vector<vk::DeviceQueueCreateInfo> mQueueCreateInfos;
+        
+        std::queue<std::shared_ptr<VulkanCommandList>> mGActiveLists;
+        std::queue<std::shared_ptr<VulkanCommandList>> mCopyActiveLists;
+        std::queue<std::shared_ptr<VulkanCommandList>> mComputeActiveLists;
+        std::queue<std::shared_ptr<VulkanCommandList>> mGUnusableListsCache;
+        std::queue<std::shared_ptr<VulkanCommandList>> mCopyUnusableListsCache;
+        std::queue<std::shared_ptr<VulkanCommandList>> mComputeUnusableListsCache;
+        std::mutex mListMutex;
     };
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)
