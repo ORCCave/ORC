@@ -68,8 +68,12 @@ namespace Orc
             _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
             _wait(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
 
-            mActiveLists.clear();
-            mUnusableListsCache.clear();
+            mGActiveLists.clear();
+            mComputeActiveLists.clear();
+            mCopyActiveLists.clear();
+            mGUnusableListsCache.clear();
+            mComputeUnusableListsCache.clear();
+            mCopyUnusableListsCache.clear();
         }
 
         void* getRawGraphicsDevice() const
@@ -298,23 +302,10 @@ namespace Orc
             static_cast<ID3D12GraphicsCommandList*>(mGraphicsList[mFrameIndex]->getRawCommandList())->ClearRenderTargetView(rtvHandle, colorRGBA, 0, nullptr);
         }
 
-        bool updateCmdListUsable(D3D12CommandList* list, uint64 graphicsValue, uint64 copyValue, uint64 computeValue)
+        bool updateCmdListUsable(D3D12CommandList* list, uint64 value)
         {
             auto type = list->getCommandListType();
-            uint64 realValue = 0;
-            switch (type)
-            {
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                realValue = graphicsValue;
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                realValue = copyValue;
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                realValue = computeValue;
-                break;
-            }
-            if (list->mValue <= realValue)
+            if (list->mValue <= value)
             {
                 return true;
             }
@@ -323,43 +314,86 @@ namespace Orc
 
         void runGarbageCollection()
         {
-            std::shared_ptr<D3D12CommandList> sp;
-            auto graphicsValue = mGraphicsFence->GetCompletedValue();
-            auto copyValue = mCopyFence->GetCompletedValue();
-            auto computeValue = mComputeFence->GetCompletedValue();
+            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
+            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
+        }
 
-            size_t unusableCount = mUnusableListsCache.unsafe_size();
+        void _clearLists(GraphicsCommandList::GraphicsCommandListType type)
+        {
+            concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>>* realLists = nullptr;
+            concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>>* realUnusableLists = nullptr;
+            uint64 completedvalue = 0;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                realLists = &mGActiveLists;
+                realUnusableLists = &mGUnusableListsCache;
+                completedvalue = mGraphicsFence->GetCompletedValue();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                realLists = &mCopyActiveLists;
+                realUnusableLists = &mCopyUnusableListsCache;
+                completedvalue = mCopyFence->GetCompletedValue();
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                realLists = &mComputeActiveLists;
+                realUnusableLists = &mComputeUnusableListsCache;
+                completedvalue = mComputeFence->GetCompletedValue();
+                break;
+            }
+
+            std::shared_ptr<D3D12CommandList> sp;
+            size_t unusableCount = realUnusableLists->unsafe_size();
             size_t loopCount = 0;
             while (loopCount < unusableCount)
             {
-                mUnusableListsCache.try_pop(sp);
-                if (updateCmdListUsable(sp.get(), graphicsValue, copyValue, computeValue))
+                realUnusableLists->try_pop(sp);
+                if (updateCmdListUsable(sp.get(), completedvalue))
                 {
-                    mActiveLists.push(sp);
+                    realLists->push(sp);
                 }
                 else
                 {
-                    mUnusableListsCache.push(sp);
+                    realUnusableLists->push(sp);
                 }
                 ++loopCount;
             }
 
             constexpr size_t maxCacheSize = 100;
-            const size_t cacheSize = mActiveLists.unsafe_size();
+            const size_t cacheSize = realLists->unsafe_size();
             if (cacheSize > maxCacheSize)
             {
-                mActiveLists.clear();
+                realLists->clear();
             }
         }
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
         {
+            concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>>* realLists = nullptr;
+            concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>>* realUnusableLists = nullptr;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                realLists = &mGActiveLists;
+                realUnusableLists = &mGUnusableListsCache;
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                realLists = &mCopyActiveLists;
+                realUnusableLists = &mCopyUnusableListsCache;
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                realLists = &mComputeActiveLists;
+                realUnusableLists = &mComputeUnusableListsCache;
+                break;
+            }
+
             std::shared_ptr<D3D12CommandList> sp;
-            if (!mActiveLists.try_pop(sp))
+            if (!realLists->try_pop(sp))
             {
                 sp = std::dynamic_pointer_cast<D3D12CommandList>(createCommandList(type));
             }
-            mUnusableListsCache.push(sp);
+            realUnusableLists->push(sp);
             return sp.get();
         }
 
@@ -405,8 +439,12 @@ namespace Orc
 
         std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> mSwapChainRes;
         // CmdList Cache
-        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mActiveLists;
-        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mUnusableListsCache;
+        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mGActiveLists;
+        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mCopyActiveLists;
+        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mComputeActiveLists;
+        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mGUnusableListsCache;
+        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mCopyUnusableListsCache;
+        concurrency::concurrent_queue<std::shared_ptr<D3D12CommandList>> mComputeUnusableListsCache;
     };
 
     std::shared_ptr<GraphicsDevice> createD3D12GraphicsDevice(void* windowHandle, uint32 width, uint32 height)
