@@ -19,7 +19,3 @@ if(WIN32)
 
     FetchContent_MakeAvailable(DirectX-Headers)
 endif()
-
-if(UNIX AND NOT APPLE)
-    find_package(SDL2 REQUIRED)
-endif()

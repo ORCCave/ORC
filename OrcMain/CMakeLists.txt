@@ -4,7 +4,6 @@ file(GLOB_RECURSE ORC_HEADER_FILES CONFIGURE_DEPENDS *.h)
 add_library(OrcMain STATIC ${ORC_SOURCE_FILES} ${ORC_HEADER_FILES})
 
 target_include_directories(OrcMain PUBLIC "include")
-target_link_libraries(OrcMain PRIVATE SDL2::SDL2)
 
 if(WIN32)
     find_package(Vulkan)
@@ -22,7 +21,10 @@ elseif(UNIX AND NOT APPLE)
     target_compile_definitions(OrcMain PRIVATE ORC_USE_VULKAN)
     target_link_libraries(OrcMain PRIVATE Vulkan::Vulkan)
     target_compile_definitions(OrcMain PRIVATE -DORC_PLATFORM_LINUX)
+    find_package(SDL2 REQUIRED)
 endif()
+
+target_link_libraries(OrcMain PRIVATE SDL2::SDL2)
 
 if(Vulkan_FOUND)
     target_include_directories(OrcMain PRIVATE "${PROJECT_SOURCE_DIR}/External/VulkanMemoryAllocator/include")
