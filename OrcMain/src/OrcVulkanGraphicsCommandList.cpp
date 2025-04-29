@@ -28,8 +28,7 @@ namespace Orc
         void begin()
         {
             mCommandBuffer[0]->reset();
-            vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-            mCommandBuffer[0]->begin(beginInfo);
+            mCommandBuffer[0]->begin({});
         }
 
         void end()
