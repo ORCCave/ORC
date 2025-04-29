@@ -28,7 +28,7 @@ namespace Orc
         void begin()
         {
             mCommandBuffer[0]->reset();
-            mCommandBuffer[0]->begin({});
+            mCommandBuffer[0]->begin(nullptr);
         }
 
         void end()
