@@ -30,13 +30,11 @@ namespace Orc
     class VulkanCommandList : public GraphicsCommandList
     {
     public:
-        VulkanCommandList(GraphicsDevice* device,GraphicsCommandListType type) : GraphicsCommandList(type)
-        {
-
-        }
+        VulkanCommandList(GraphicsDevice* device,GraphicsCommandListType type) : GraphicsCommandList(type) {}
+        vk::Fence mFence;
     };
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
-    std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type, bool isPrimary = true);
+    std::shared_ptr<VulkanCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type, bool isPrimary = true);
 }
 #endif

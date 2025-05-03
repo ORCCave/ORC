@@ -12,12 +12,12 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 namespace Orc
@@ -81,6 +81,7 @@ namespace Orc
             mDevice->waitIdle();
             mSwapChain.reset();
             mSurfaceWrapper.reset();
+            mListsCache.clear();
         }
 
         void _createInstance(SDL_Window* window)
@@ -309,7 +310,6 @@ namespace Orc
                 mTransferMainFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
                 mComputeFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
             }
-
         }
 
         void _transitionSwapchainForDrawing()
@@ -399,6 +399,19 @@ namespace Orc
 
             gCommandBuffer.endRendering();
 
+            if (!mGCmdBuffers.empty())
+            {
+                gCommandBuffer.executeCommands(mGCmdBuffers);
+            }
+            if (!mCopyCmdBuffers.empty())
+            {
+                copyCommandBuffer.executeCommands(mCopyCmdBuffers);
+            }
+            if (!mComputeCmdBuffers.empty())
+            {
+                computeCommandBuffer.executeCommands(mComputeCmdBuffers);
+            }
+
             mGraphicsList[mCurrentIndex]->end();
             mCopyList[mCurrentIndex]->end();
             mComputeList[mCurrentIndex]->end();
@@ -429,28 +442,25 @@ namespace Orc
         void executeCommandList(GraphicsCommandList* list)
         {
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
-            vk::SubmitInfo submitInfo;
-            submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = &commandBuffer;
-
             auto type = list->getCommandListType();
+            std::lock_guard<std::mutex> lock(mExecuteMutex);
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                //mGraphicsQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
+                mGCmdBuffers.push_back(commandBuffer);
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                //mTransferQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
+                mCopyCmdBuffers.push_back(commandBuffer);
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                //mComputeQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
+                mComputeCmdBuffers.push_back(commandBuffer);
                 break;
             }
         }
 
-        std::shared_ptr<GraphicsCommandList> _createCommandList(GraphicsCommandList::GraphicsCommandListType type, bool isPromary)
+        std::shared_ptr<VulkanCommandList> _createCommandList(GraphicsCommandList::GraphicsCommandListType type, bool isPromary)
         {
-            std::shared_ptr<GraphicsCommandList> list;
+            std::shared_ptr<VulkanCommandList> list;
             auto this_id = std::this_thread::get_id();
             switch (type)
             {
@@ -517,18 +527,108 @@ namespace Orc
 
         void runGarbageCollection()
         {
-
+            mGCmdBuffers.clear();
+            mCopyCmdBuffers.clear();
+            mComputeCmdBuffers.clear();
+            if (listCount >= 300)
+            {
+                // Remove all
+                for (auto it = mListsCache.begin(); it != mListsCache.end(); ++it)
+                {
+                    auto& lists = it->second;
+                    for (auto it2 = lists.begin(); it2 != lists.end();)
+                    {
+                        if (auto result = mDevice->getFenceStatus(it2->get()->mFence); result == vk::Result::eSuccess)
+                        {
+                            it2 = lists.erase(it2);
+                            --listCount;
+                        }
+                        else
+                        {
+                            ++it2;
+                        }
+                    }
+                }
+            }
+            else if (listCount >= 100)
+            {
+                // Remove one
+                for (auto it = mListsCache.begin(); it != mListsCache.end(); ++it)
+                {
+                    auto& lists = it->second;
+                    for (auto it2 = lists.begin(); it2 != lists.end(); ++it2)
+                    {
+                        if (auto result = mDevice->getFenceStatus(it2->get()->mFence); result == vk::Result::eSuccess)
+                        {
+                            lists.erase(it2);
+                            --listCount;
+                            return;
+                        }
+                    }
+                }
+            }
         }
 
-        void _clearLists(GraphicsCommandList::GraphicsCommandListType type)
+        bool _checkCommandList(const std::vector<std::shared_ptr<VulkanCommandList>>& lists, GraphicsCommandList::GraphicsCommandListType type, size_t& index)
         {
-
+            for (size_t i = 0; i < lists.size(); ++i)
+            {
+                if (lists[i]->getCommandListType() == type)
+                {
+                    if (auto result = mDevice->getFenceStatus(lists[i]->mFence); result == vk::Result::eSuccess)
+                    {
+                        index = i;
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
         {
+            vk::UniqueFence* realFence = nullptr;
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                realFence = &mGMainFence[mCurrentIndex];
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                realFence = &mTransferMainFence[mCurrentIndex];
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                realFence = &mComputeFence[mCurrentIndex];
+                break;
+            };
 
-            return nullptr;
+            auto this_id = std::this_thread::get_id();
+            std::lock_guard<std::mutex> lock(mListMutex);
+            if (mListsCache.contains(this_id))
+            {
+                auto& lists = mListsCache[this_id];
+                size_t index = 0;
+                if (_checkCommandList(lists, type, index))
+                {
+                    lists[index]->mFence = realFence->get();
+                    return lists[index].get();
+                }
+                else
+                {
+                    ++listCount;
+                    auto list = _createCommandList(type, false);
+                    list->mFence = realFence->get();
+                    lists.push_back(list);
+                    return lists.back().get();
+                }
+            }
+
+            ++listCount;
+            std::vector<std::shared_ptr<VulkanCommandList>> lists;
+            auto list = _createCommandList(type, false);
+            list->mFence = realFence->get();
+            lists.push_back(list);
+            mListsCache[this_id] = lists;
+            return lists.back().get();
         }
 
         vk::UniqueInstance mInstance;
@@ -547,9 +647,9 @@ namespace Orc
         vk::PhysicalDevice mPhysicalDevice;
         vk::UniqueDevice mDevice;
         vk::UniqueSwapchainKHR mSwapChain;
-        std::map<std::thread::id, vk::UniqueCommandPool> mGraphicsCommandPool;
-        std::map<std::thread::id, vk::UniqueCommandPool> mComputeCommandPool;
-        std::map<std::thread::id, vk::UniqueCommandPool> mTransferCommandPool;
+        std::unordered_map<std::thread::id, vk::UniqueCommandPool> mGraphicsCommandPool;
+        std::unordered_map<std::thread::id, vk::UniqueCommandPool> mComputeCommandPool;
+        std::unordered_map<std::thread::id, vk::UniqueCommandPool> mTransferCommandPool;
         vk::Queue mGraphicsQueue;
         vk::Queue mComputeQueue;
         vk::Queue mTransferQueue;
@@ -575,6 +675,14 @@ namespace Orc
         std::vector<vk::DeviceQueueCreateInfo> mQueueCreateInfos;
         
         std::mutex mListMutex;
+        std::mutex mExecuteMutex;
+        std::unordered_map<std::thread::id, std::vector<std::shared_ptr<VulkanCommandList>>> mListsCache;
+
+        std::vector<vk::CommandBuffer> mGCmdBuffers;
+        std::vector<vk::CommandBuffer> mCopyCmdBuffers;
+        std::vector<vk::CommandBuffer> mComputeCmdBuffers;
+
+        size_t listCount = 0;
     };
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height)

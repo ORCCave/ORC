@@ -16,7 +16,7 @@ namespace Orc
         VulkanGraphicsCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandListType type, bool isPrimary)
             : mDevice(static_cast<VkDevice>(device->getRawGraphicsDevice())), mCmdPool(cmdPool), VulkanCommandList(device, type)
         {
-
+            mIsPrimary = isPrimary;
             vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary;
             if (!isPrimary)
             {
@@ -35,6 +35,11 @@ namespace Orc
         {
             mCommandBuffer[0]->reset();
             vk::CommandBufferBeginInfo beginInfo{};
+            vk::CommandBufferInheritanceInfo inheritanceInfo{};
+            if (!mIsPrimary)
+            {
+                beginInfo.pInheritanceInfo = &inheritanceInfo;
+            }
             mCommandBuffer[0]->begin(&beginInfo);
         }
 
@@ -51,9 +56,10 @@ namespace Orc
         vk::Device mDevice;
         vk::CommandPool mCmdPool;
         std::vector<vk::UniqueCommandBuffer> mCommandBuffer;
+        bool mIsPrimary;
     };
 
-    std::shared_ptr<GraphicsCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type, bool isPrimary)
+    std::shared_ptr<VulkanCommandList> createVulkanCommandList(GraphicsDevice* device, VkCommandPool cmdPool, GraphicsCommandList::GraphicsCommandListType type, bool isPrimary)
     {
         return std::make_shared<VulkanGraphicsCommandList>(device, cmdPool, type, isPrimary);
     }
