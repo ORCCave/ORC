@@ -377,35 +377,37 @@ namespace Orc
 
             mFrameIndex = frameIndex.value;
             mGraphicsList[mCurrentIndex]->begin();
+            mCopyList[mCurrentIndex]->begin();
+            mComputeList[mCurrentIndex]->begin();
 
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
-
             vk::RenderingAttachmentInfo colorAttachment(mSwapChainViews[mFrameIndex].get(), vk::ImageLayout::eAttachmentOptimal);
             colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
             colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
-
             vk::RenderingInfo renderingInfo{};
             renderingInfo.renderArea = vk::Rect2D({ 0, 0 }, { mWidth, mHeight });
             renderingInfo.layerCount = 1;
             renderingInfo.colorAttachmentCount = 1;
             renderingInfo.pColorAttachments = &colorAttachment;
-
             commandBuffer.beginRendering(renderingInfo);
         }
 
         void endDraw()
         {
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
+            vk::CommandBuffer gCommandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
+            vk::CommandBuffer copyCommandBuffer(static_cast<VkCommandBuffer>(mCopyList[mCurrentIndex]->getRawCommandList()));
+            vk::CommandBuffer computeCommandBuffer(static_cast<VkCommandBuffer>(mComputeList[mCurrentIndex]->getRawCommandList()));
 
-            commandBuffer.endRendering();
+            gCommandBuffer.endRendering();
 
             mGraphicsList[mCurrentIndex]->end();
+            mCopyList[mCurrentIndex]->end();
+            mComputeList[mCurrentIndex]->end();
 
             vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-            mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore[mCurrentIndex].get(), &waitStageMask, 1, &commandBuffer, 1, &mRenderFinishedSemaphore[mCurrentIndex].get()), mGMainFence[mCurrentIndex].get());
-
-            mTransferQueue.submit({}, mTransferMainFence[mCurrentIndex].get());
-            mComputeQueue.submit({}, mComputeFence[mCurrentIndex].get());
+            mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore[mCurrentIndex].get(), &waitStageMask, 1, &gCommandBuffer, 1, &mRenderFinishedSemaphore[mCurrentIndex].get()), mGMainFence[mCurrentIndex].get());
+            mTransferQueue.submit(vk::SubmitInfo(0, nullptr, nullptr, 1, &copyCommandBuffer, 0, nullptr), mTransferMainFence[mCurrentIndex].get());
+            mComputeQueue.submit(vk::SubmitInfo(0, nullptr, nullptr, 1, &computeCommandBuffer, 0, nullptr), mComputeFence[mCurrentIndex].get());
 
             vk::PresentInfoKHR presentInfo{};
             presentInfo.swapchainCount = 1;
