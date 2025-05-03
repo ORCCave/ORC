@@ -12,11 +12,13 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <queue>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace Orc
@@ -284,18 +286,19 @@ namespace Orc
 
         void _createCommandPool()
         {
-            mGraphicsCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mGraphicsFamily.value()));
-            mComputeCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mComputeFamily.value()));
-            mTransferCommandPool = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mTransferFamily.value()));
+            auto this_id = std::this_thread::get_id();
+            mGraphicsCommandPool[this_id] = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mGraphicsFamily.value()));
+            mComputeCommandPool[this_id] = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mComputeFamily.value()));
+            mTransferCommandPool[this_id] = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mTransferFamily.value()));
         }
 
         void _createCommandBuffer()
         {
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
-                mGraphicsList[i] = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
+                mGraphicsList[i] = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS, true);
 
-            mComputeList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
-            mCopyList = createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
+            mComputeList = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE, true);
+            mCopyList = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY, true);
         }
 
         void _createFence()
@@ -412,24 +415,6 @@ namespace Orc
             return static_cast<VkDevice>(mDevice.get());
         }
 
-        std::shared_ptr<GraphicsCommandList> createCommandList(GraphicsCommandList::GraphicsCommandListType type)
-        {
-            std::shared_ptr<GraphicsCommandList> list;
-            switch (type)
-            {
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                list = createVulkanCommandList(this, static_cast<VkCommandPool>(mGraphicsCommandPool.get()), type);
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                list = createVulkanCommandList(this, static_cast<VkCommandPool>(mTransferCommandPool.get()), type);
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                list = createVulkanCommandList(this, static_cast<VkCommandPool>(mComputeCommandPool.get()), type);
-                break;
-            }
-            return list;
-        }
-
         void executeCommandList(GraphicsCommandList* list)
         {
             vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(list->getRawCommandList()));
@@ -450,6 +435,37 @@ namespace Orc
                 mComputeQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
                 break;
             }
+        }
+
+        std::shared_ptr<GraphicsCommandList> _createCommandList(GraphicsCommandList::GraphicsCommandListType type, bool isPromary)
+        {
+            std::shared_ptr<GraphicsCommandList> list;
+            auto this_id = std::this_thread::get_id();
+            switch (type)
+            {
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
+                if (!mGraphicsCommandPool.contains(this_id))
+                {
+                    mGraphicsCommandPool[this_id] = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mGraphicsFamily.value()));
+                }
+                list = createVulkanCommandList(this, static_cast<VkCommandPool>(mGraphicsCommandPool[this_id].get()), type, isPromary);
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
+                if (!mTransferCommandPool.contains(this_id))
+                {
+                    mTransferCommandPool[this_id] = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mTransferFamily.value()));
+                }
+                list = createVulkanCommandList(this, static_cast<VkCommandPool>(mTransferCommandPool[this_id].get()), type, isPromary);
+                break;
+            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
+                if (!mComputeCommandPool.contains(this_id))
+                {
+                    mComputeCommandPool[this_id] = mDevice->createCommandPoolUnique(vk::CommandPoolCreateInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, mComputeFamily.value()));
+                }
+                list = createVulkanCommandList(this, static_cast<VkCommandPool>(mComputeCommandPool[this_id].get()), type, isPromary);
+                break;
+            }
+            return list;
         }
 
         vk::SurfaceFormatKHR _getSurfaceFormat()
@@ -506,89 +522,17 @@ namespace Orc
 
         void runGarbageCollection()
         {
-            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS);
-            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY);
-            _clearLists(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE);
+
         }
 
         void _clearLists(GraphicsCommandList::GraphicsCommandListType type)
         {
-            std::queue<std::shared_ptr<VulkanCommandList>>* realLists = nullptr;
-            std::queue<std::shared_ptr<VulkanCommandList>>* realUnusableLists = nullptr;
-            switch (type)
-            {
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                realLists = &mGActiveLists;
-                realUnusableLists = &mGUnusableListsCache;
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                realLists = &mCopyActiveLists;
-                realUnusableLists = &mCopyUnusableListsCache;
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                realLists = &mComputeActiveLists;
-                realUnusableLists = &mComputeUnusableListsCache;
-                break;
-            }
-            size_t unusableCount = realUnusableLists->size();
-            size_t loopCount = 0;
-            while (loopCount < unusableCount)
-            {
-                auto sp = realUnusableLists->front();
-                realUnusableLists->pop();
-                if (checkCmdListUsable(sp.get()))
-                {
-                    realLists->push(sp);
-                }
-                else
-                {
-                    realUnusableLists->push(sp);
-                }
-                ++loopCount;
-            }
 
-            constexpr size_t maxCacheSize = 100;
-            const size_t cacheSize = realLists->size();
-            if (cacheSize > maxCacheSize)
-            {
-                std::queue<std::shared_ptr<VulkanCommandList>> empty_queue;
-                realLists->swap(empty_queue);
-            }
         }
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
         {
-            std::queue<std::shared_ptr<VulkanCommandList>>* realLists = nullptr;
-            std::queue<std::shared_ptr<VulkanCommandList>>* realUnusableLists = nullptr;
-            switch (type)
-            {
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                realLists = &mGActiveLists;
-                realUnusableLists = &mGUnusableListsCache;
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                realLists = &mCopyActiveLists;
-                realUnusableLists = &mCopyUnusableListsCache;
-                break;
-            case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                realLists = &mComputeActiveLists;
-                realUnusableLists = &mComputeUnusableListsCache;
-                break;
-            }
-
-            std::shared_ptr<VulkanCommandList> sp;
-            std::lock_guard guard(mListMutex);
-            if (!realLists->empty())
-            {
-                auto sp = realLists->front();
-                realLists->pop();
-                realUnusableLists->push(sp);
-                return sp.get();
-            }
-
-            auto list = std::dynamic_pointer_cast<VulkanCommandList>(createCommandList(type));
-            realUnusableLists->push(list);
-            return list.get();
+            return nullptr;
         }
 
         vk::UniqueInstance mInstance;
@@ -607,9 +551,9 @@ namespace Orc
         vk::PhysicalDevice mPhysicalDevice;
         vk::UniqueDevice mDevice;
         vk::UniqueSwapchainKHR mSwapChain;
-        vk::UniqueCommandPool mGraphicsCommandPool;
-        vk::UniqueCommandPool mComputeCommandPool;
-        vk::UniqueCommandPool mTransferCommandPool;
+        std::map<std::thread::id, vk::UniqueCommandPool> mGraphicsCommandPool;
+        std::map<std::thread::id, vk::UniqueCommandPool> mComputeCommandPool;
+        std::map<std::thread::id, vk::UniqueCommandPool> mTransferCommandPool;
         vk::Queue mGraphicsQueue;
         vk::Queue mComputeQueue;
         vk::Queue mTransferQueue;
@@ -632,12 +576,6 @@ namespace Orc
 
         std::vector<vk::DeviceQueueCreateInfo> mQueueCreateInfos;
         
-        std::queue<std::shared_ptr<VulkanCommandList>> mGActiveLists;
-        std::queue<std::shared_ptr<VulkanCommandList>> mCopyActiveLists;
-        std::queue<std::shared_ptr<VulkanCommandList>> mComputeActiveLists;
-        std::queue<std::shared_ptr<VulkanCommandList>> mGUnusableListsCache;
-        std::queue<std::shared_ptr<VulkanCommandList>> mCopyUnusableListsCache;
-        std::queue<std::shared_ptr<VulkanCommandList>> mComputeUnusableListsCache;
         std::mutex mListMutex;
     };
 
