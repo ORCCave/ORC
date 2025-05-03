@@ -16,7 +16,6 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <queue>
 #include <string>
 #include <thread>
 #include <vector>
@@ -438,13 +437,13 @@ namespace Orc
             switch (type)
             {
             case GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS:
-                mGraphicsQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
+                //mGraphicsQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COPY:
-                mTransferQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
+                //mTransferQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
                 break;
             case GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE:
-                mComputeQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
+                //mComputeQueue.submit(submitInfo, static_cast<VulkanCommandList*>(list)->mFence.get());
                 break;
             }
         }
@@ -516,22 +515,6 @@ namespace Orc
             return formats[0];
         }
 
-        bool checkCmdListUsable(VulkanCommandList* list)
-        {
-            auto result = mDevice->getFenceStatus(list->mFence.get());
-            if (result == vk::Result::eSuccess)
-            {
-                mDevice->resetFences(list->mFence.get());
-                return true;
-            }
-            else if (result != vk::Result::eNotReady)
-            {
-                throw OrcException("Fence check failed");
-            }
-
-            return false;
-        }
-
         void runGarbageCollection()
         {
 
@@ -544,6 +527,7 @@ namespace Orc
 
         GraphicsCommandList* _getCmdList(GraphicsCommandList::GraphicsCommandListType type)
         {
+
             return nullptr;
         }
 

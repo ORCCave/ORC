@@ -24,7 +24,6 @@
 #include <vulkan/vulkan.hpp>
 
 #include <memory>
-#include <thread>
 
 namespace Orc
 {
@@ -33,12 +32,8 @@ namespace Orc
     public:
         VulkanCommandList(GraphicsDevice* device,GraphicsCommandListType type) : GraphicsCommandList(type)
         {
-            vk::Device realdevice = static_cast<VkDevice>(device->getRawGraphicsDevice());
-            mFence = realdevice.createFenceUnique(vk::FenceCreateInfo());
-            mThreadId = std::this_thread::get_id();
+
         }
-        vk::UniqueFence mFence;
-        std::thread::id mThreadId;
     };
 
     std::shared_ptr<GraphicsDevice> createVulkanGraphicsDevice(void* windowHandle, uint32 width, uint32 height);
