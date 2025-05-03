@@ -379,7 +379,26 @@ namespace Orc
             mCopyList[mCurrentIndex]->begin();
             mComputeList[mCurrentIndex]->begin();
 
-            vk::CommandBuffer commandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
+            vk::CommandBuffer gCommandBuffer(static_cast<VkCommandBuffer>(mGraphicsList[mCurrentIndex]->getRawCommandList()));
+            {
+                vk::ImageMemoryBarrier2 preBarrier2(
+                    vk::PipelineStageFlagBits2::eTopOfPipe,
+                    vk::AccessFlagBits2::eNone,
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    vk::AccessFlagBits2::eColorAttachmentWrite,
+                    vk::ImageLayout::ePresentSrcKHR,
+                    vk::ImageLayout::eAttachmentOptimal,
+                    vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
+                    mSwapchainImages[mFrameIndex],
+                    { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 }
+                );
+
+                vk::DependencyInfo depBegin{};
+                depBegin.imageMemoryBarrierCount = 1;
+                depBegin.pImageMemoryBarriers = &preBarrier2;
+                gCommandBuffer.pipelineBarrier2(depBegin);
+            }
+
             vk::RenderingAttachmentInfo colorAttachment(mSwapChainViews[mFrameIndex].get(), vk::ImageLayout::eAttachmentOptimal);
             colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
             colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
@@ -388,7 +407,7 @@ namespace Orc
             renderingInfo.layerCount = 1;
             renderingInfo.colorAttachmentCount = 1;
             renderingInfo.pColorAttachments = &colorAttachment;
-            commandBuffer.beginRendering(renderingInfo);
+            gCommandBuffer.beginRendering(renderingInfo);
         }
 
         void endDraw()
@@ -398,7 +417,6 @@ namespace Orc
             vk::CommandBuffer computeCommandBuffer(static_cast<VkCommandBuffer>(mComputeList[mCurrentIndex]->getRawCommandList()));
 
             gCommandBuffer.endRendering();
-
             if (!mGCmdBuffers.empty())
             {
                 gCommandBuffer.executeCommands(mGCmdBuffers);
@@ -410,6 +428,25 @@ namespace Orc
             if (!mComputeCmdBuffers.empty())
             {
                 computeCommandBuffer.executeCommands(mComputeCmdBuffers);
+            }
+
+            {
+                vk::ImageMemoryBarrier2 postRenderBarrier2(
+                    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    vk::AccessFlagBits2::eColorAttachmentWrite,
+                    vk::PipelineStageFlagBits2::eBottomOfPipe,
+                    vk::AccessFlagBits2::eNone,
+                    vk::ImageLayout::eAttachmentOptimal,
+                    vk::ImageLayout::ePresentSrcKHR,
+                    vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
+                    mSwapchainImages[mFrameIndex],
+                    { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 }
+                );
+
+                vk::DependencyInfo depEnd{};
+                depEnd.imageMemoryBarrierCount = 1;
+                depEnd.pImageMemoryBarriers = &postRenderBarrier2;
+                gCommandBuffer.pipelineBarrier2(depEnd);
             }
 
             mGraphicsList[mCurrentIndex]->end();
