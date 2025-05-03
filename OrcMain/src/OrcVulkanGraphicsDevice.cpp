@@ -295,10 +295,11 @@ namespace Orc
         void _createCommandBuffer()
         {
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
+            {
                 mGraphicsList[i] = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_GRAPHICS, true);
-
-            mComputeList = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE, true);
-            mCopyList = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY, true);
+                mComputeList[i] = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COMPUTE, true);
+                mCopyList[i] = _createCommandList(GraphicsCommandList::GraphicsCommandListType::GCLT_COPY, true);
+            }
         }
 
         void _createFence()
@@ -565,8 +566,8 @@ namespace Orc
         std::vector<vk::ImageView> mSwapChainImageViews;
 
         std::shared_ptr<GraphicsCommandList> mGraphicsList[ORC_SWAPCHAIN_COUNT];
-        std::shared_ptr<GraphicsCommandList> mComputeList;
-        std::shared_ptr<GraphicsCommandList> mCopyList;
+        std::shared_ptr<GraphicsCommandList> mComputeList[ORC_SWAPCHAIN_COUNT];
+        std::shared_ptr<GraphicsCommandList> mCopyList[ORC_SWAPCHAIN_COUNT];
 
         vk::Format mSwapChainFormat = vk::Format::eUndefined;
         vk::UniqueImageView mSwapChainViews[ORC_SWAPCHAIN_COUNT];
