@@ -305,7 +305,12 @@ namespace Orc
         void _createFence()
         {
             for (uint32 i = 0; i < ORC_SWAPCHAIN_COUNT; ++i)
-                mMainFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+            {
+                mGMainFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+                mTransferMainFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+                mComputeFence[i] = mDevice->createFenceUnique(vk::FenceCreateInfo(vk::FenceCreateFlagBits::eSignaled));
+            }
+
         }
 
         void _transitionSwapchainForDrawing()
@@ -358,10 +363,12 @@ namespace Orc
 
         void beginDraw()
         {
-            if(mDevice->waitForFences(1, &mMainFence[mCurrentIndex].get(), VK_TRUE, std::numeric_limits<uint64>::max()) != vk::Result::eSuccess)
+            vk::Fence fences[3] = { mGMainFence[mCurrentIndex].get(), mTransferMainFence[mCurrentIndex].get(), mComputeFence[mCurrentIndex].get() };
+
+            if(mDevice->waitForFences(3, fences, vk::True, std::numeric_limits<uint64>::max()) != vk::Result::eSuccess)
                 throw OrcException("Failed to wait for fences");
 
-            if (mDevice->resetFences(1, &mMainFence[mCurrentIndex].get()) != vk::Result::eSuccess)
+            if (mDevice->resetFences(3, fences) != vk::Result::eSuccess)
                 throw OrcException("Failed to reset fences");
 
             auto frameIndex = mDevice->acquireNextImageKHR(mSwapChain.get(), std::numeric_limits<uint64>::max(), mImageAvailableSemaphore[mCurrentIndex].get());
@@ -395,8 +402,10 @@ namespace Orc
             mGraphicsList[mCurrentIndex]->end();
 
             vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-            mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore[mCurrentIndex].get(), &waitStageMask, 1, &commandBuffer, 1, &mRenderFinishedSemaphore[mCurrentIndex].get()), 
-                mMainFence[mCurrentIndex].get());
+            mGraphicsQueue.submit(vk::SubmitInfo(1, &mImageAvailableSemaphore[mCurrentIndex].get(), &waitStageMask, 1, &commandBuffer, 1, &mRenderFinishedSemaphore[mCurrentIndex].get()), mGMainFence[mCurrentIndex].get());
+
+            mTransferQueue.submit({}, mTransferMainFence[mCurrentIndex].get());
+            mComputeQueue.submit({}, mComputeFence[mCurrentIndex].get());
 
             vk::PresentInfoKHR presentInfo{};
             presentInfo.swapchainCount = 1;
@@ -560,7 +569,9 @@ namespace Orc
         vk::Queue mTransferQueue;
         vk::UniqueSemaphore mImageAvailableSemaphore[ORC_SWAPCHAIN_COUNT];
         vk::UniqueSemaphore mRenderFinishedSemaphore[ORC_SWAPCHAIN_COUNT];
-        vk::UniqueFence mMainFence[ORC_SWAPCHAIN_COUNT];
+        vk::UniqueFence mGMainFence[ORC_SWAPCHAIN_COUNT];
+        vk::UniqueFence mTransferMainFence[ORC_SWAPCHAIN_COUNT];
+        vk::UniqueFence mComputeFence[ORC_SWAPCHAIN_COUNT];
 
         std::vector<vk::Image> mSwapchainImages;
         std::vector<vk::ImageView> mSwapChainImageViews;
