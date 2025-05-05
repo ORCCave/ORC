@@ -101,8 +101,6 @@ namespace Orc
                 checkAndAddExtension(extensions, "VK_EXT_debug_utils");
             }
 #endif
-            checkAndAddExtension(extensions, "VK_EXT_swapchain_colorspace");
-
             vk::ApplicationInfo appInfo("ORC", 1, "ORC", 1, VK_API_VERSION_1_3);
             vk::InstanceCreateInfo createInfo(
                 {},
