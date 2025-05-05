@@ -94,7 +94,6 @@ namespace Orc
                 throw OrcException(SDL_GetError());
             std::vector<const char*> layers;
 #ifndef NDEBUG
-            auto instanceLayerProperties = vk::enumerateInstanceLayerProperties();
             if (checkValidation())
             {
                 layers.emplace_back("VK_LAYER_KHRONOS_validation");
