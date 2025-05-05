@@ -32,6 +32,18 @@ namespace Orc
         return false;
     }
 
+    bool checkExtension(const std::vector<vk::ExtensionProperties>& availableExtensions, const std::string& extensionStr)
+    {
+        for (auto const& property : availableExtensions)
+        {
+            if (std::string(property.extensionName.data()) == extensionStr)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     class VulkanGraphicsDevice : public GraphicsDevice
     {
         // For raii
@@ -94,11 +106,15 @@ namespace Orc
             if (!SDL_Vulkan_GetInstanceExtensions(window, &count_instance_extensions, extensions.data()))
                 throw OrcException(SDL_GetError());
             std::vector<const char*> layers;
+            std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
 #ifndef NDEBUG
             if (checkValidation())
             {
                 layers.emplace_back("VK_LAYER_KHRONOS_validation");
-                checkAndAddExtension(extensions, "VK_EXT_debug_utils");
+                if (checkExtension(availableExtensions, "VK_EXT_debug_utils"));
+                {
+                    checkAndAddExtension(extensions, "VK_EXT_debug_utils");
+                }
             }
 #endif
             vk::ApplicationInfo appInfo("ORC", 1, "ORC", 1, VK_API_VERSION_1_3);
