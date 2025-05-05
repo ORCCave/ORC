@@ -10,6 +10,7 @@
 #include <SDL2/SDL_vulkan.h>
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <limits>
 #include <memory>
@@ -180,17 +181,12 @@ namespace Orc
             vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures(true);
             vk::PhysicalDeviceSynchronization2Features sync2Features(true);
             dynamicRenderingFeatures.pNext = &sync2Features;
-            vk::DeviceCreateInfo createInfo(
-                {},
-                static_cast<uint32>(mQueueCreateInfos.size()),
-                mQueueCreateInfos.data(),
-                0,
-                nullptr,
-                static_cast<uint32>(extensions.size()),
-                extensions.data(),
-                nullptr,
-                &dynamicRenderingFeatures
-            );
+            vk::DeviceCreateInfo createInfo;
+            createInfo.queueCreateInfoCount = static_cast<uint32>(mQueueCreateInfos.size());
+            createInfo.pQueueCreateInfos = mQueueCreateInfos.data();
+            createInfo.enabledExtensionCount = static_cast<uint32>(extensions.size());
+            createInfo.ppEnabledExtensionNames = extensions.data();
+            createInfo.pNext = &dynamicRenderingFeatures;
             mDevice = mPhysicalDevice.createDeviceUnique(createInfo);
         }
 
@@ -269,7 +265,7 @@ namespace Orc
                 vk::SurfaceTransformFlagBitsKHR::eIdentity,
                 vk::CompositeAlphaFlagBitsKHR::eOpaque,
                 vk::PresentModeKHR::eFifo,
-                vk::True,
+                VK_TRUE,
                 {}
             );
             mSwapChain = mDevice->createSwapchainKHRUnique(createInfo);
@@ -363,7 +359,7 @@ namespace Orc
         {
             vk::Fence fences[3] = { mGMainFence[mCurrentIndex].get(), mTransferMainFence[mCurrentIndex].get(), mComputeFence[mCurrentIndex].get() };
 
-            if(mDevice->waitForFences(3, fences, vk::True, std::numeric_limits<uint64>::max()) != vk::Result::eSuccess)
+            if (mDevice->waitForFences(3, fences, VK_TRUE, std::numeric_limits<uint64>::max()) != vk::Result::eSuccess)
                 throw OrcException("Failed to wait for fences");
 
             if (mDevice->resetFences(3, fences) != vk::Result::eSuccess)
@@ -398,9 +394,10 @@ namespace Orc
                 gCommandBuffer.pipelineBarrier2(depBegin);
             }
 
+            std::array<float, 4> colorValue = { 0.0f, 0.0f, 0.0f, 1.0f };
             vk::RenderingAttachmentInfo colorAttachment(mSwapChainViews[mFrameIndex].get(), vk::ImageLayout::eAttachmentOptimal);
             colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-            colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
+            colorAttachment.clearValue = vk::ClearValue(vk::ClearColorValue(colorValue));
             vk::RenderingInfo renderingInfo{};
             renderingInfo.renderArea = vk::Rect2D({ 0, 0 }, { mWidth, mHeight });
             renderingInfo.layerCount = 1;
