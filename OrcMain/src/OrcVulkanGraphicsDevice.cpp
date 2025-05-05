@@ -323,8 +323,8 @@ namespace Orc
                 imageMemoryBarrier.dstStageMask = vk::PipelineStageFlagBits2::eBottomOfPipe;
                 imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
                 imageMemoryBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-                imageMemoryBarrier.srcQueueFamilyIndex = vk::QueueFamilyIgnored;
-                imageMemoryBarrier.dstQueueFamilyIndex = vk::QueueFamilyIgnored;
+                imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 imageMemoryBarrier.image = mSwapchainImages[i];
                 imageMemoryBarrier.subresourceRange = vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
                 commandBuffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, {}, {}, 1, &imageMemoryBarrier));
@@ -388,7 +388,7 @@ namespace Orc
                     vk::AccessFlagBits2::eColorAttachmentWrite,
                     vk::ImageLayout::ePresentSrcKHR,
                     vk::ImageLayout::eAttachmentOptimal,
-                    vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
+                    VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
                     mSwapchainImages[mFrameIndex],
                     { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 }
                 );
@@ -438,7 +438,7 @@ namespace Orc
                     vk::AccessFlagBits2::eNone,
                     vk::ImageLayout::eAttachmentOptimal,
                     vk::ImageLayout::ePresentSrcKHR,
-                    vk::QueueFamilyIgnored, vk::QueueFamilyIgnored,
+                    VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
                     mSwapchainImages[mFrameIndex],
                     { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 }
                 );
