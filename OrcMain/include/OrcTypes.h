@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace Orc
 {
@@ -12,4 +13,6 @@ namespace Orc
     using int16 = std::int16_t;
     using int32 = std::int32_t;
     using int64 = std::int64_t;
+
+    using String = std::string;
 }
