@@ -1,5 +1,6 @@
 #include "OrcEntity.h"
 #include "OrcManager.h"
+#include "OrcTypes.h"
 
 #include <memory>
 #include <vector>
