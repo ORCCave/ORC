@@ -1,6 +1,6 @@
 #pragma once
 
-#include "OrcGraphicsPrerequisites.h"
+#include "OrcPrerequisites.h"
 
 #include "OrcCommandList.h"
 #include "OrcTypes.h"

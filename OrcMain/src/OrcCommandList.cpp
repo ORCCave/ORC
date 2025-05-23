@@ -1,5 +1,3 @@
-#include "OrcGraphicsPrerequisites.h"
-
 #include "OrcCommandList.h"
 #include "OrcGraphicsDevice.h"
 #include "OrcTypes.h"
