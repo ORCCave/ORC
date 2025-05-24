@@ -1,0 +1,3 @@
+[submodule "OrcAssets"]
+	path = OrcAssets
+	url = https://github.com/ORCCave/OrcAssets.git
