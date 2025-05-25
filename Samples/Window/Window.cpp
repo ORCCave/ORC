@@ -8,7 +8,7 @@ int main()
     try
     {
         Orc::ApplicationContext ctx(L"OrcWindow", 800, 600);
-        auto* root = ctx.getRoot();
+        auto root = ctx.getRoot();
         root->startRendering();
     }
     catch (const std::exception& e) { std::cerr << e.what() << std::endl; }

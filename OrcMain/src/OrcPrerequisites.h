@@ -4,6 +4,8 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 
+#define NOMINMAX
+
 #include <Windows.h>
 
 #include <d3d12.h>
