@@ -10,15 +10,6 @@
 
 namespace Orc
 {
-    namespace detail
-    {
-        class _SceneManager : public SceneManager
-        {
-        public:
-            _SceneManager(const String& name) : SceneManager(name) {}
-        };
-    }
-
     Root::Root(void* handle, uint32 w, uint32 h) : mWidthForSwapChain(w), mHeightForSwapChain(h)
     {
         HWND* hwndPtr = static_cast<HWND*>(handle);
@@ -46,7 +37,6 @@ namespace Orc
 
     SceneManager* Root::createSceneManager(const String& sceneManagerName)
     {
-        auto& ptr = mSceneManagers.emplace_back(std::make_shared<detail::_SceneManager>(sceneManagerName));
-        return ptr.get();
+        return nullptr;
     }
 }

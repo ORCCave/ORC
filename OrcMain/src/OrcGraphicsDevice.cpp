@@ -131,7 +131,7 @@ namespace Orc
         return std::make_shared<CommandListContext>(this, type);
     }
 
-    void GraphicsDevice::executeCommandList(CommandListContext* context)
+    void GraphicsDevice::executeCommandListContext(CommandListContext* context)
     {
         auto tempList = static_cast<ID3D12CommandList*>(context->getRawCommandList());
         auto type = context->getCommandListType();
@@ -204,7 +204,7 @@ namespace Orc
         mGraphicsCommandList->getRawCommandList()->ResourceBarrier(1, &barrier);
 
         mGraphicsCommandList->end();
-        executeCommandList(mGraphicsCommandList.get());
+        executeCommandListContext(mGraphicsCommandList.get());
 
         mGraphicsQueue->Signal(mGraphicsFence.Get(), mGraphicsFenceValue++);
         mCopyQueue->Signal(mCopyFence.Get(), mCopyFenceValue++);

@@ -22,7 +22,7 @@ namespace Orc
         uint32 getCurrentFrameIndex() const { return mFrameIndex; }
 
         std::shared_ptr<CommandListContext> createCommandListContext(CommandListType type);
-        void executeCommandList(CommandListContext* context);
+        void executeCommandListContext(CommandListContext* context);
     private:
         void _createSwapChain(HWND hwnd, uint32 width, uint32 height);
         void _createRTV();
